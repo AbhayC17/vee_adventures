@@ -1,0 +1,45 @@
+name: vees_adventures
+description: A warm, responsive Flutter + Flame preschool adventure experience.
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.13.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flame: ^1.38.2
+  flutter_svg: ^2.3.0
+  video_player: ^2.14.0
+  image_picker: ^1.2.3
+  shared_preferences: ^2.5.5
+  http: ^1.6.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/vee/
+    - assets/vee/movements/
+    - assets/intro/
+    - assets/world/
+    - assets/world/magical_door_closed.png
+    - assets/world/magical_door_open.png
+    - assets/ui/
+    - assets/data/
+
+  fonts:
+    - family: Fredoka
+      fonts:
+        - asset: assets/fonts/Fredoka-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Fredoka-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Fredoka-Bold.ttf
+          weight: 700

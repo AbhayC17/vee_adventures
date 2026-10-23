@@ -1,0 +1,62 @@
+[
+  {
+    "id": "lost_treasure",
+    "title": "The Treasure That Moved",
+    "hook": "Vee found a treasure map… but the treasure keeps moving whenever nobody is looking!",
+    "paths": ["Garden Path", "Rocky Path", "Secret Tree"],
+    "setting": "garden",
+    "objectId": "rock",
+    "mode": "outdoor",
+    "surpriseIds": ["mineral_sparkle", "tree_hidden_hollow", "tiny_trail"]
+  },
+  {
+    "id": "park_mystery",
+    "title": "The Glowing Trail",
+    "hook": "A glowing trail appeared in the park. Vee thinks it is leading to something that should not be missed.",
+    "paths": ["Flower Path", "Tree Path", "Quiet Grove"],
+    "setting": "park",
+    "objectId": "flower",
+    "mode": "outdoor",
+    "surpriseIds": ["butterfly_follow", "flower_bloom", "hidden_pollen"]
+  },
+  {
+    "id": "beach_rescue",
+    "title": "The Wave’s Secret",
+    "hook": "A tiny clue washed onto the shore. Can you discover what the next wave is trying to reveal?",
+    "paths": ["Shell Trail", "Rocky Shore", "Water Path"],
+    "setting": "beach",
+    "objectId": "water",
+    "mode": "outdoor",
+    "surpriseIds": ["tiny_rainbow", "water_shape_shift", "rock_time_trail"]
+  },
+  {
+    "id": "mystery_party",
+    "title": "The Birthday Surprise",
+    "hook": "The party is ready… but the BIG surprise has disappeared. Vee needs a clever party detective!",
+    "paths": ["Gift Table", "Balloon Trail", "Snack Corner"],
+    "setting": "birthday_party",
+    "objectId": "balloon",
+    "mode": "indoor",
+    "surpriseIds": ["balloon_zoom", "balloon_pop_safe", "toy_portal"]
+  },
+  {
+    "id": "secret_bedroom",
+    "title": "The Thing Under the Bed",
+    "hook": "Something magical moved under the bed. It left a tiny trail… and Vee is curious.",
+    "paths": ["Book Shelf", "Toy Corner", "Pillow Fort"],
+    "setting": "bedroom",
+    "objectId": "toy",
+    "mode": "indoor",
+    "surpriseIds": ["toy_portal", "page_portal", "hidden_button"]
+  },
+  {
+    "id": "kitchen_magic",
+    "title": "The Kitchen That Woke Up",
+    "hook": "The kitchen objects are glowing one by one. Vee needs help finding out why!",
+    "paths": ["Fruit Basket", "Table Trail", "Cupboard Clue"],
+    "setting": "kitchen",
+    "objectId": "apple",
+    "mode": "indoor",
+    "surpriseIds": ["apple_star_cut", "water_ripple", "table_transform"]
+  }
+]

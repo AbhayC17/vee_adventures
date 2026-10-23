@@ -1,0 +1,9 @@
+{
+  "name": "Vee's Adventures",
+  "short_name": "Vee Adventures",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FFF4D7",
+  "theme_color": "#41BFE8",
+  "description": "A warm preschool adventure game."
+}

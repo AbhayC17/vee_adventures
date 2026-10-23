@@ -1,0 +1,30 @@
+# Secrets and local environment configuration
+.env
+.env.*
+!.env.example
+
+# Flutter / Dart generated output
+build/
+.dart_tool/
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+coverage/
+
+# Local platform configuration
+android/local.properties
+ios/Flutter/ephemeral/
+
+# Node / Vercel generated files
+node_modules/
+.vercel/
+
+# Editors and operating-system files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+.vercel
+.env*

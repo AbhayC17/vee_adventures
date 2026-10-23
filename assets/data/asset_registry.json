@@ -1,0 +1,58 @@
+{
+  "available": [
+    {
+      "id": "background.main",
+      "path": "assets/vee/game_background.webp",
+      "kind": "raster",
+      "dimensions": "1280x719",
+      "alpha": false,
+      "role": "fixed-world-background"
+    },
+    {
+      "id": "vee.happy",
+      "path": "assets/vee/vee_happy_idle.webp",
+      "kind": "raster",
+      "dimensions": "666x800",
+      "alpha": true,
+      "role": "default-static-vee"
+    },
+    {
+      "id": "vee.encourage",
+      "path": "assets/vee/vee_encourage.webp",
+      "kind": "raster",
+      "dimensions": "666x800",
+      "alpha": true,
+      "role": "encouraging-static-vee"
+    },
+    {
+      "id": "vee.celebration",
+      "path": "assets/vee/vee_celebration.webp",
+      "kind": "raster",
+      "dimensions": "666x800",
+      "alpha": true,
+      "role": "celebration-static-vee"
+    }
+  ],
+  "missing_from_supplied_zip": [
+    "vee_curious.svg",
+    "magical_door.svg",
+    "magical_portal.svg",
+    "treasure_chest.svg",
+    "stepping_stones.svg",
+    "magical_tree.svg",
+    "adventure_star.svg",
+    "butterfly.svg",
+    "magical_egg.svg",
+    "magical_flower.svg",
+    "discovery_collection_badge.svg"
+  ],
+  "implementation_policy": "Missing static props are procedurally generated in Flutter/Flame rather than replaced by invented images. The missing curious pose is not invented; the available encouraging pose is used for discovery states.",
+  "intro_cinematic": {
+    "id": "intro.cinematic",
+    "path": "assets/intro/intro_video.mp4",
+    "kind": "video",
+    "dimensions": "848x478",
+    "alpha": false,
+    "role": "launch-cinematic"
+  }
+}
