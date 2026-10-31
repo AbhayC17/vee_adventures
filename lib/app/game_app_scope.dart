@@ -7,10 +7,10 @@ import 'app_controller.dart';
 /// UI such as the star counter cannot become stale after a reward is awarded.
 class GameAppScope extends InheritedNotifier<AppController> {
   const GameAppScope({
-    Key? key,
+    super.key,
     required AppController controller,
-    required Widget child,
-  }) : super(key: key, notifier: controller, child: child);
+    required super.child,
+  }) : super(notifier: controller);
 
   static AppController of(BuildContext context) {
     final scope = context.dependOnInheritedWidgetOfExactType<GameAppScope>();

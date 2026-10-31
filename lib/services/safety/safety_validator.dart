@@ -39,11 +39,8 @@ class SafetyValidator {
 
     final movements = json['movementSequence'] as List<dynamic>? ?? const [];
     for (final m in movements) {
-      final name = (m is Map ? m['name'] : null)
-              ?.toString()
-              .toLowerCase()
-              .trim() ??
-          '';
+      final name =
+          (m is Map ? m['name'] : null)?.toString().toLowerCase().trim() ?? '';
       if (name.isNotEmpty && !allowedMovements.contains(name)) return false;
 
       final countValue = m is Map ? m['count'] : null;

@@ -67,7 +67,6 @@ void main() {
     restoredApp.dispose();
   });
 
-
   test('malformed legacy fields are recovered with safe defaults', () async {
     SharedPreferences.setMockInitialValues(<String, Object>{
       GameStorage.snapshotKey: jsonEncode(<String, dynamic>{
@@ -75,7 +74,10 @@ void main() {
         'stars': 'many',
         'completedActivities': <Object?>[false, 'spot-garden'],
         'history': <String, dynamic>{
-          'adventures': <Object?>['bad-record', <String, dynamic>{'theme': 1}],
+          'adventures': <Object?>[
+            'bad-record',
+            <String, dynamic>{'theme': 1},
+          ],
           'movements': 'not-a-list',
           'taskHistory': 'not-a-map',
         },

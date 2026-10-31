@@ -1,4 +1,3 @@
-
 import 'package:flutter/foundation.dart';
 
 import '../ai/ai_provider.dart';
@@ -20,7 +19,7 @@ class DiscoveryAnalyzer {
   String? lastError;
 
   DiscoveryAnalyzer({AiProvider? provider})
-      : provider = provider ?? OpenAiCompatibleProvider();
+    : provider = provider ?? OpenAiCompatibleProvider();
 
   Future<IdentifiedCatalogItem?> identify({
     required List<int> bytes,
@@ -43,7 +42,8 @@ class DiscoveryAnalyzer {
       );
     }
 
-    final prompt = '''You are an object-identification component for a preschool game.
+    final prompt =
+        '''You are an object-identification component for a preschool game.
 Identify the main visible everyday/nature object in the image using ONLY one of these catalog IDs: ${allowedCatalogIds.join(', ')}.
 Return JSON only: {"catalog_id":"one_id_or_unknown","confidence":0.0}.
 The confidence must be a number between 0.0 and 1.0.
@@ -60,7 +60,9 @@ If uncertain, return catalog_id="unknown" and a low confidence.''';
           ? (provider as OpenAiCompatibleProvider).lastError
           : null;
       if (kDebugMode) {
-        debugPrint('[SPOT] Identification failed: ${lastError ?? 'provider returned no result'}.');
+        debugPrint(
+          '[SPOT] Identification failed: ${lastError ?? 'provider returned no result'}.',
+        );
       }
       return null;
     }
@@ -85,8 +87,7 @@ If uncertain, return catalog_id="unknown" and a low confidence.''';
     }
 
     final id = rawId.trim();
-    final confidence =
-        rawConfidence is num ? rawConfidence.toDouble() : 0.0;
+    final confidence = rawConfidence is num ? rawConfidence.toDouble() : 0.0;
 
     if (id == 'unknown') {
       lastError = 'MODEL_UNCERTAIN';

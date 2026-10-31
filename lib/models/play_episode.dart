@@ -29,9 +29,8 @@ class PlayEpisode {
     final modeValue = json['mode'];
     final mode = EnvironmentMode.values.firstWhere(
       (value) => value.name == modeValue,
-      orElse: () => throw FormatException(
-        'Unknown PLAY episode mode: $modeValue',
-      ),
+      orElse: () =>
+          throw FormatException('Unknown PLAY episode mode: $modeValue'),
     );
 
     List<String> readStringList(String key) {
@@ -72,13 +71,13 @@ class PlayEpisode {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'title': title,
-        'hook': hook,
-        'paths': paths,
-        'setting': setting,
-        'objectId': objectId,
-        'mode': mode.name,
-        'surpriseIds': surpriseIds,
-      };
+    'id': id,
+    'title': title,
+    'hook': hook,
+    'paths': paths,
+    'setting': setting,
+    'objectId': objectId,
+    'mode': mode.name,
+    'surpriseIds': surpriseIds,
+  };
 }

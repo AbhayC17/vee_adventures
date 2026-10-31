@@ -74,7 +74,10 @@ class ContentCatalog {
         CatalogFact('apple_01', 'Apples grow on trees.'),
         CatalogFact('apple_02', 'Apples can be red, green, or yellow.'),
         CatalogFact('apple_03', 'Apples have a crunchy texture.'),
-        CatalogFact('apple_04', 'Apple trees grow flowers before they grow apples.'),
+        CatalogFact(
+          'apple_04',
+          'Apple trees grow flowers before they grow apples.',
+        ),
       ],
       settings: ['kitchen', 'garden', 'dining'],
       interactions: ['drag', 'tap'],
@@ -93,7 +96,10 @@ class ContentCatalog {
       },
       facts: [
         CatalogFact('banana_01', 'Bananas grow in bunches.'),
-        CatalogFact('banana_02', 'A banana changes from green toward yellow as it ripens.'),
+        CatalogFact(
+          'banana_02',
+          'A banana changes from green toward yellow as it ripens.',
+        ),
         CatalogFact('banana_03', 'Bananas have a soft inside.'),
         CatalogFact('banana_04', 'Banana plants have large leaves.'),
       ],
@@ -116,7 +122,10 @@ class ContentCatalog {
         CatalogFact('tomato_01', 'Tomatoes grow on plants.'),
         CatalogFact('tomato_02', 'Tomatoes can be red, yellow, or green.'),
         CatalogFact('tomato_03', 'A tomato is usually round or oval.'),
-        CatalogFact('tomato_04', 'Tomato plants can grow flowers before fruit appears.'),
+        CatalogFact(
+          'tomato_04',
+          'Tomato plants can grow flowers before fruit appears.',
+        ),
       ],
       settings: ['kitchen', 'garden', 'dining'],
       interactions: ['drag', 'tap'],
@@ -176,7 +185,10 @@ class ContentCatalog {
         'groups': ['plants'],
       },
       facts: [
-        CatalogFact('tree_01', 'Trees have roots, trunks, branches, and leaves.'),
+        CatalogFact(
+          'tree_01',
+          'Trees have roots, trunks, branches, and leaves.',
+        ),
         CatalogFact('tree_02', 'Roots help hold a tree in the ground.'),
         CatalogFact('tree_03', 'Tree trunks support branches and leaves.'),
         CatalogFact('tree_04', 'Trees can provide homes for many animals.'),
@@ -200,7 +212,10 @@ class ContentCatalog {
         CatalogFact('leaf_01', 'Leaves help plants collect light.'),
         CatalogFact('leaf_02', 'Leaf veins carry water and nutrients.'),
         CatalogFact('leaf_03', 'Leaves can change color as seasons change.'),
-        CatalogFact('leaf_04', 'Different plants can have very different leaf shapes.'),
+        CatalogFact(
+          'leaf_04',
+          'Different plants can have very different leaf shapes.',
+        ),
       ],
       settings: ['garden', 'park', 'forest'],
       interactions: ['drag', 'swipe', 'reveal'],
@@ -219,9 +234,18 @@ class ContentCatalog {
       },
       facts: [
         CatalogFact('butterfly_01', 'Butterflies have six legs.'),
-        CatalogFact('butterfly_02', 'A butterfly starts life as a caterpillar.'),
-        CatalogFact('butterfly_03', 'Butterfly wings are covered with tiny scales.'),
-        CatalogFact('butterfly_04', 'Many butterflies visit flowers for nectar.'),
+        CatalogFact(
+          'butterfly_02',
+          'A butterfly starts life as a caterpillar.',
+        ),
+        CatalogFact(
+          'butterfly_03',
+          'Butterfly wings are covered with tiny scales.',
+        ),
+        CatalogFact(
+          'butterfly_04',
+          'Many butterflies visit flowers for nectar.',
+        ),
       ],
       settings: ['garden', 'park', 'forest'],
       interactions: ['tap', 'follow', 'reveal'],
@@ -261,7 +285,10 @@ class ContentCatalog {
       },
       facts: [
         CatalogFact('rock_01', 'Rocks can have many colors and textures.'),
-        CatalogFact('rock_02', 'Some rocks are smooth because they have been worn over time.'),
+        CatalogFact(
+          'rock_02',
+          'Some rocks are smooth because they have been worn over time.',
+        ),
         CatalogFact('rock_03', 'Rocks can be found in many places outdoors.'),
         CatalogFact('rock_04', 'Some rocks contain minerals.'),
       ],
@@ -305,7 +332,10 @@ class ContentCatalog {
         CatalogFact('toothbrush_01', 'A toothbrush has small bristles.'),
         CatalogFact('toothbrush_02', 'Toothbrushes are used to clean teeth.'),
         CatalogFact('toothbrush_03', 'A toothbrush has a handle to hold.'),
-        CatalogFact('toothbrush_04', 'Brushing reaches different parts of your teeth.'),
+        CatalogFact(
+          'toothbrush_04',
+          'Brushing reaches different parts of your teeth.',
+        ),
       ],
       settings: ['bathroom'],
       interactions: ['drag', 'tap'],
@@ -345,7 +375,10 @@ class ContentCatalog {
       },
       facts: [
         CatalogFact('mirror_01', 'A mirror can reflect light.'),
-        CatalogFact('mirror_02', 'Smooth shiny surfaces can make clear reflections.'),
+        CatalogFact(
+          'mirror_02',
+          'Smooth shiny surfaces can make clear reflections.',
+        ),
         CatalogFact('mirror_03', 'Mirrors come in many shapes.'),
         CatalogFact('mirror_04', 'A mirror can help us see what is behind us.'),
       ],
@@ -368,7 +401,10 @@ class ContentCatalog {
         CatalogFact('book_01', 'Books can tell stories or share information.'),
         CatalogFact('book_02', 'Pages are often made from paper.'),
         CatalogFact('book_03', 'Books come in many sizes and shapes.'),
-        CatalogFact('book_04', 'Pictures in books can help us understand a story.'),
+        CatalogFact(
+          'book_04',
+          'Pictures in books can help us understand a story.',
+        ),
       ],
       settings: ['bedroom', 'hall', 'library'],
       interactions: ['drag', 'tap', 'reveal'],
@@ -407,10 +443,22 @@ class ContentCatalog {
         'groups': ['objects', 'party'],
       },
       facts: [
-        CatalogFact('balloon_01', 'Balloons can float when filled with a lighter-than-air gas.'),
-        CatalogFact('balloon_02', 'Balloons can come in many colors and shapes.'),
-        CatalogFact('balloon_03', 'A balloon stretches as it is filled with air.'),
-        CatalogFact('balloon_04', 'Balloons can move when air pushes against them.'),
+        CatalogFact(
+          'balloon_01',
+          'Balloons can float when filled with a lighter-than-air gas.',
+        ),
+        CatalogFact(
+          'balloon_02',
+          'Balloons can come in many colors and shapes.',
+        ),
+        CatalogFact(
+          'balloon_03',
+          'A balloon stretches as it is filled with air.',
+        ),
+        CatalogFact(
+          'balloon_04',
+          'Balloons can move when air pushes against them.',
+        ),
       ],
       settings: ['party', 'hall'],
       interactions: ['tap', 'follow', 'drag'],
@@ -430,8 +478,14 @@ class ContentCatalog {
       facts: [
         CatalogFact('plate_01', 'Plates hold food so it is easier to eat.'),
         CatalogFact('plate_02', 'Many plates are round.'),
-        CatalogFact('plate_03', 'Plates can be made from ceramic, glass, or other materials.'),
-        CatalogFact('plate_04', 'A plate has a broad surface for holding food.'),
+        CatalogFact(
+          'plate_03',
+          'Plates can be made from ceramic, glass, or other materials.',
+        ),
+        CatalogFact(
+          'plate_04',
+          'A plate has a broad surface for holding food.',
+        ),
       ],
       settings: ['kitchen', 'dining', 'party'],
       interactions: ['drag', 'sort'],
@@ -452,7 +506,10 @@ class ContentCatalog {
         CatalogFact('cup_01', 'A cup can hold a drink.'),
         CatalogFact('cup_02', 'Cups can be made from many materials.'),
         CatalogFact('cup_03', 'Some cups have handles.'),
-        CatalogFact('cup_04', 'A cup has a hollow space inside for holding liquid.'),
+        CatalogFact(
+          'cup_04',
+          'A cup has a hollow space inside for holding liquid.',
+        ),
       ],
       settings: ['kitchen', 'dining', 'party'],
       interactions: ['drag', 'sort', 'tap'],
@@ -470,9 +527,15 @@ class ContentCatalog {
         'groups': ['objects', 'toys'],
       },
       facts: [
-        CatalogFact('toy_01', 'Toys can be used for pretend play and learning.'),
+        CatalogFact(
+          'toy_01',
+          'Toys can be used for pretend play and learning.',
+        ),
         CatalogFact('toy_02', 'Toys come in many shapes and materials.'),
-        CatalogFact('toy_03', 'Sorting toys can help us compare their features.'),
+        CatalogFact(
+          'toy_03',
+          'Sorting toys can help us compare their features.',
+        ),
         CatalogFact('toy_04', 'Some toys are designed to encourage movement.'),
       ],
       settings: ['bedroom', 'hall'],
@@ -490,8 +553,8 @@ class ContentCatalog {
       name: 'Bathroom',
       emoji: '🛁',
       subtitle: 'Water, bubbles, mirrors and getting-ready discoveries.',
-      itemIds: ['water','toothbrush','soap','mirror'],
-      challengeIds: ['bathroom_clean','bathroom_reveal'],
+      itemIds: ['water', 'toothbrush', 'soap', 'mirror'],
+      challengeIds: ['bathroom_clean', 'bathroom_reveal'],
       hiddenAreas: ['mirror_message'],
       mode: EnvironmentMode.indoor,
     ),
@@ -500,8 +563,8 @@ class ContentCatalog {
       name: 'Bedroom',
       emoji: '🛏️',
       subtitle: 'Toys, books, light and little bedtime mysteries.',
-      itemIds: ['toy','book','lamp','mirror'],
-      challengeIds: ['bedroom_sort','bedroom_shadow'],
+      itemIds: ['toy', 'book', 'lamp', 'mirror'],
+      challengeIds: ['bedroom_sort', 'bedroom_shadow'],
       hiddenAreas: ['under_bed'],
       mode: EnvironmentMode.indoor,
     ),
@@ -510,8 +573,8 @@ class ContentCatalog {
       name: 'Hall',
       emoji: '🛋️',
       subtitle: 'Everyday objects, light, movement and things we pass by.',
-      itemIds: ['lamp','mirror','book','toy','balloon'],
-      challengeIds: ['hall_match','hall_shadow'],
+      itemIds: ['lamp', 'mirror', 'book', 'toy', 'balloon'],
+      challengeIds: ['hall_match', 'hall_shadow'],
       hiddenAreas: ['hidden_drawer'],
       mode: EnvironmentMode.indoor,
     ),
@@ -520,8 +583,8 @@ class ContentCatalog {
       name: 'Kitchen',
       emoji: '🍳',
       subtitle: 'Food, water, containers and everyday kitchen helpers.',
-      itemIds: ['apple','banana','tomato','carrot','water','cup','plate'],
-      challengeIds: ['kitchen_sort','kitchen_match'],
+      itemIds: ['apple', 'banana', 'tomato', 'carrot', 'water', 'cup', 'plate'],
+      challengeIds: ['kitchen_sort', 'kitchen_match'],
       hiddenAreas: ['recipe_corner'],
       mode: EnvironmentMode.indoor,
     ),
@@ -530,8 +593,8 @@ class ContentCatalog {
       name: 'Dining Time',
       emoji: '🍽️',
       subtitle: 'A table full of objects, food and tiny sorting puzzles.',
-      itemIds: ['apple','banana','tomato','plate','cup'],
-      challengeIds: ['dining_table','dining_sort'],
+      itemIds: ['apple', 'banana', 'tomato', 'plate', 'cup'],
+      challengeIds: ['dining_table', 'dining_sort'],
       hiddenAreas: ['table_surprise'],
       mode: EnvironmentMode.indoor,
     ),
@@ -540,8 +603,8 @@ class ContentCatalog {
       name: 'Library',
       emoji: '📚',
       subtitle: 'Books, shapes, stories and a quiet mystery shelf.',
-      itemIds: ['book','lamp'],
-      challengeIds: ['library_sort','library_sequence'],
+      itemIds: ['book', 'lamp'],
+      challengeIds: ['library_sort', 'library_sequence'],
       hiddenAreas: ['secret_shelf'],
       mode: EnvironmentMode.indoor,
     ),
@@ -550,8 +613,8 @@ class ContentCatalog {
       name: 'Grocery Shop',
       emoji: '🛒',
       subtitle: 'Find, sort and discover everyday foods and objects.',
-      itemIds: ['apple','banana','tomato','carrot','cup','plate'],
-      challengeIds: ['shop_sort','shop_match'],
+      itemIds: ['apple', 'banana', 'tomato', 'carrot', 'cup', 'plate'],
+      challengeIds: ['shop_sort', 'shop_match'],
       hiddenAreas: ['special_shelf'],
       mode: EnvironmentMode.indoor,
     ),
@@ -562,8 +625,17 @@ class ContentCatalog {
       name: 'Garden',
       emoji: '🌳',
       subtitle: 'Flowers, leaves, tiny visitors and hidden corners.',
-      itemIds: ['flower','tree','leaf','butterfly','bird','rock','water','apple'],
-      challengeIds: ['garden_nest','garden_sort'],
+      itemIds: [
+        'flower',
+        'tree',
+        'leaf',
+        'butterfly',
+        'bird',
+        'rock',
+        'water',
+        'apple',
+      ],
+      challengeIds: ['garden_nest', 'garden_sort'],
       hiddenAreas: ['secret_garden'],
       mode: EnvironmentMode.outdoor,
     ),
@@ -572,8 +644,8 @@ class ContentCatalog {
       name: 'Park',
       emoji: '🛝',
       subtitle: 'Open-air discoveries with plants, rocks and animals.',
-      itemIds: ['tree','flower','leaf','butterfly','bird','rock','water'],
-      challengeIds: ['park_nature','park_match'],
+      itemIds: ['tree', 'flower', 'leaf', 'butterfly', 'bird', 'rock', 'water'],
+      challengeIds: ['park_nature', 'park_match'],
       hiddenAreas: ['quiet_grove'],
       mode: EnvironmentMode.outdoor,
     ),
@@ -582,8 +654,8 @@ class ContentCatalog {
       name: 'Forest',
       emoji: '🌲',
       subtitle: 'A magical nature trail with clues tucked between trees.',
-      itemIds: ['tree','leaf','butterfly','bird','rock'],
-      challengeIds: ['forest_trail','forest_sort'],
+      itemIds: ['tree', 'leaf', 'butterfly', 'bird', 'rock'],
+      challengeIds: ['forest_trail', 'forest_sort'],
       hiddenAreas: ['hidden_hollow'],
       mode: EnvironmentMode.outdoor,
     ),
@@ -592,8 +664,8 @@ class ContentCatalog {
       name: 'Beach',
       emoji: '🏖️',
       subtitle: 'Water, rocks, patterns and a changing shoreline.',
-      itemIds: ['water','rock'],
-      challengeIds: ['beach_sort','beach_reveal'],
+      itemIds: ['water', 'rock'],
+      challengeIds: ['beach_sort', 'beach_reveal'],
       hiddenAreas: ['tide_pool'],
       mode: EnvironmentMode.outdoor,
     ),
@@ -602,8 +674,8 @@ class ContentCatalog {
       name: 'Road & Street',
       emoji: '🛣️',
       subtitle: 'Safe street-side observations, signs, shapes and sounds.',
-      itemIds: ['rock','water','bird','tree'],
-      challengeIds: ['road_shapes','road_sounds'],
+      itemIds: ['rock', 'water', 'bird', 'tree'],
+      challengeIds: ['road_shapes', 'road_sounds'],
       hiddenAreas: ['street_clue'],
       mode: EnvironmentMode.outdoor,
     ),
@@ -614,8 +686,8 @@ class ContentCatalog {
       name: 'Birthday Party',
       emoji: '🎂',
       subtitle: 'Balloons, gifts, food and a celebration mystery.',
-      itemIds: ['balloon','plate','cup','apple','banana','toy'],
-      challengeIds: ['party_sort','party_follow'],
+      itemIds: ['balloon', 'plate', 'cup', 'apple', 'banana', 'toy'],
+      challengeIds: ['party_sort', 'party_follow'],
       hiddenAreas: ['gift_corner'],
       mode: EnvironmentMode.indoor,
       isSpecialEvent: true,
@@ -624,9 +696,10 @@ class ContentCatalog {
       id: 'holiday_stay',
       name: 'Holiday Stay',
       emoji: '🏨',
-      subtitle: 'A cozy stay with rooms, luggage, breakfast and little discoveries.',
-      itemIds: ['toy','book','lamp','mirror','cup','plate'],
-      challengeIds: ['stay_sort','stay_search'],
+      subtitle:
+          'A cozy stay with rooms, luggage, breakfast and little discoveries.',
+      itemIds: ['toy', 'book', 'lamp', 'mirror', 'cup', 'plate'],
+      challengeIds: ['stay_sort', 'stay_search'],
       hiddenAreas: ['secret_room'],
       mode: EnvironmentMode.indoor,
       isSpecialEvent: true,
@@ -636,8 +709,8 @@ class ContentCatalog {
       name: 'Sleepover',
       emoji: '🌙',
       subtitle: 'Pillows, stories, quiet sounds and a bedtime mystery.',
-      itemIds: ['toy','book','lamp','mirror'],
-      challengeIds: ['sleepover_sequence','sleepover_search'],
+      itemIds: ['toy', 'book', 'lamp', 'mirror'],
+      challengeIds: ['sleepover_sequence', 'sleepover_search'],
       hiddenAreas: ['pillow_fort'],
       mode: EnvironmentMode.indoor,
       isSpecialEvent: true,
@@ -646,9 +719,10 @@ class ContentCatalog {
       id: 'family_movie_night',
       name: 'Family Movie Night',
       emoji: '🍿',
-      subtitle: 'Cozy snacks, seats, stories and a surprise after the lights dim.',
-      itemIds: ['plate','cup','toy','book','lamp'],
-      challengeIds: ['movie_sort','movie_sequence'],
+      subtitle:
+          'Cozy snacks, seats, stories and a surprise after the lights dim.',
+      itemIds: ['plate', 'cup', 'toy', 'book', 'lamp'],
+      challengeIds: ['movie_sort', 'movie_sequence'],
       hiddenAreas: ['snack_surprise'],
       mode: EnvironmentMode.indoor,
       isSpecialEvent: true,
@@ -660,8 +734,8 @@ class ContentCatalog {
       name: 'Diwali Celebration',
       emoji: '🪔',
       subtitle: 'Lights, colors, decorations and a celebration trail.',
-      itemIds: ['flower','leaf','balloon','rock','water'],
-      challengeIds: ['diwali_colors','diwali_lights'],
+      itemIds: ['flower', 'leaf', 'balloon', 'rock', 'water'],
+      challengeIds: ['diwali_colors', 'diwali_lights'],
       hiddenAreas: ['glowing_corner'],
       mode: EnvironmentMode.outdoor,
       isSpecialEvent: true,
@@ -671,8 +745,8 @@ class ContentCatalog {
       name: 'Holi Celebration',
       emoji: '🎨',
       subtitle: 'Bright colors, music, movement and playful discovery.',
-      itemIds: ['flower','water','balloon','leaf'],
-      challengeIds: ['holi_colors','holi_sort'],
+      itemIds: ['flower', 'water', 'balloon', 'leaf'],
+      challengeIds: ['holi_colors', 'holi_sort'],
       hiddenAreas: ['color_trail'],
       mode: EnvironmentMode.outdoor,
       isSpecialEvent: true,
@@ -682,8 +756,8 @@ class ContentCatalog {
       name: 'Pongal Celebration',
       emoji: '🌾',
       subtitle: 'Harvest colors, nature, food and a festive outdoor trail.',
-      itemIds: ['carrot','apple','flower','leaf','water'],
-      challengeIds: ['pongal_harvest','pongal_sort'],
+      itemIds: ['carrot', 'apple', 'flower', 'leaf', 'water'],
+      challengeIds: ['pongal_harvest', 'pongal_sort'],
       hiddenAreas: ['harvest_corner'],
       mode: EnvironmentMode.outdoor,
       isSpecialEvent: true,
@@ -693,8 +767,8 @@ class ContentCatalog {
       name: 'Onam Celebration',
       emoji: '🌼',
       subtitle: 'Flowers, patterns, nature and a festive discovery path.',
-      itemIds: ['flower','leaf','apple','banana','water'],
-      challengeIds: ['onam_pattern','onam_nature'],
+      itemIds: ['flower', 'leaf', 'apple', 'banana', 'water'],
+      challengeIds: ['onam_pattern', 'onam_nature'],
       hiddenAreas: ['flower_path'],
       mode: EnvironmentMode.outdoor,
       isSpecialEvent: true,
@@ -704,8 +778,8 @@ class ContentCatalog {
       name: 'Train Journey',
       emoji: '🚆',
       subtitle: 'Watch the world go by and solve little travel clues.',
-      itemIds: ['book','water','apple','banana','bird'],
-      challengeIds: ['train_sequence','train_observe'],
+      itemIds: ['book', 'water', 'apple', 'banana', 'bird'],
+      challengeIds: ['train_sequence', 'train_observe'],
       hiddenAreas: ['window_surprise'],
       mode: EnvironmentMode.outdoor,
       isSpecialEvent: true,
@@ -715,8 +789,8 @@ class ContentCatalog {
       name: 'Airplane Journey',
       emoji: '✈️',
       subtitle: 'Pack, travel, look outside and follow the sky-high clues.',
-      itemIds: ['book','cup','water','apple'],
-      challengeIds: ['plane_sequence','plane_search'],
+      itemIds: ['book', 'cup', 'water', 'apple'],
+      challengeIds: ['plane_sequence', 'plane_search'],
       hiddenAreas: ['cloud_window'],
       mode: EnvironmentMode.outdoor,
       isSpecialEvent: true,
@@ -726,8 +800,8 @@ class ContentCatalog {
       name: 'Road Trip',
       emoji: '🚗',
       subtitle: 'A family journey with roadside sights, sounds and patterns.',
-      itemIds: ['tree','bird','rock','water','apple'],
-      challengeIds: ['roadtrip_search','roadtrip_sequence'],
+      itemIds: ['tree', 'bird', 'rock', 'water', 'apple'],
+      challengeIds: ['roadtrip_search', 'roadtrip_sequence'],
       hiddenAreas: ['rest_stop'],
       mode: EnvironmentMode.outdoor,
       isSpecialEvent: true,
@@ -737,8 +811,8 @@ class ContentCatalog {
       name: 'Boat Journey',
       emoji: '⛵',
       subtitle: 'Water, wind, shorelines and gentle travel discoveries.',
-      itemIds: ['water','rock','bird','leaf'],
-      challengeIds: ['boat_observe','boat_sort'],
+      itemIds: ['water', 'rock', 'bird', 'leaf'],
+      challengeIds: ['boat_observe', 'boat_sort'],
       hiddenAreas: ['shore_surprise'],
       mode: EnvironmentMode.outdoor,
       isSpecialEvent: true,
@@ -758,7 +832,10 @@ class ContentCatalog {
   static List<CatalogItem> forSetting(String settingId) {
     final setting = settingsById[settingId];
     if (setting == null) return [];
-    return setting.itemIds.map((id) => itemsById[id]).whereType<CatalogItem>().toList();
+    return setting.itemIds
+        .map((id) => itemsById[id])
+        .whereType<CatalogItem>()
+        .toList();
   }
 }
 
@@ -770,7 +847,9 @@ class FactMemory {
 
   String nextFact(CatalogItem item) {
     final seen = _seen.putIfAbsent(item.id, () => <String>[]);
-    var available = item.facts.where((fact) => !seen.contains(fact.id)).toList();
+    var available = item.facts
+        .where((fact) => !seen.contains(fact.id))
+        .toList();
     if (available.isEmpty) {
       seen.clear();
       available = List<CatalogFact>.from(item.facts);
@@ -782,14 +861,17 @@ class FactMemory {
   }
 
   Map<String, dynamic> toJson() => {
-    for (final entry in _seen.entries) entry.key: List<String>.from(entry.value),
+    for (final entry in _seen.entries)
+      entry.key: List<String>.from(entry.value),
   };
 
   void load(Map<String, dynamic> json) {
     _seen.clear();
     for (final entry in json.entries) {
       final values = entry.value;
-      if (values is List) _seen[entry.key] = values.whereType<String>().toList();
+      if (values is List) {
+        _seen[entry.key] = values.whereType<String>().toList();
+      }
     }
   }
 }

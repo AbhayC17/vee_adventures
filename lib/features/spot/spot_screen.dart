@@ -3,9 +3,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
-import '../../widgets/adaptive_text.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../app/app_controller.dart';
 import '../../app/game_app_scope.dart';
 import '../../app/navigation.dart';
 import '../../app/design_tokens.dart';
@@ -14,7 +14,17 @@ import '../../models/content_catalog.dart';
 import '../../models/environment_mode.dart';
 import '../../services/activity_selection/movement_profile.dart';
 import '../../services/discovery_engine.dart';
+import '../../services/movement/movement_catalog.dart';
 import '../../services/spot/discovery_analyzer.dart';
+import '../../services/spot/open_discovery_rules.dart';
+import '../../widgets/item_icon.dart';
+import '../../widgets/juicy_tap.dart';
+import '../../widgets/movement_challenge.dart';
+import '../../widgets/vee_avatar.dart';
+import '../../widgets/scene_background.dart';
+import '../../widgets/scene_ui.dart';
+import '../../widgets/vee_button.dart';
+import '../../widgets/vee_loading.dart';
 import '../../widgets/world_shell.dart';
 import '../hub/adventure_hub.dart';
 import '../rewards/reward_screen.dart';
@@ -61,11 +71,34 @@ const _missions = <SpotMission>[
     title: 'Vee’s Indoor Mystery Trail',
     opening: 'Something ordinary is hiding a surprising secret. Let’s become discovery detectives!',
     mode: EnvironmentMode.indoor,
-    allowedSettings: ['kitchen', 'bedroom', 'bathroom', 'hall', 'dining', 'library', 'shop'],
+    allowedSettings: [
+      'kitchen',
+      'bedroom',
+      'bathroom',
+      'hall',
+      'dining',
+      'library',
+      'shop',
+    ],
     clues: [
-      SpotClue(title: 'SHAPE CLUE', prompt: 'Find something ROUND indoors.', property: 'shapes', value: 'round'),
-      SpotClue(title: 'TEXTURE CLUE', prompt: 'Find something SMOOTH.', property: 'textures', value: 'smooth'),
-      SpotClue(title: 'SECRET OBJECT', prompt: 'Find an everyday OBJECT that could hide a story.', property: 'groups', value: 'objects'),
+      SpotClue(
+        title: 'SHAPE CLUE',
+        prompt: 'Find something ROUND indoors.',
+        property: 'shapes',
+        value: 'round',
+      ),
+      SpotClue(
+        title: 'TEXTURE CLUE',
+        prompt: 'Find something SMOOTH.',
+        property: 'textures',
+        value: 'smooth',
+      ),
+      SpotClue(
+        title: 'SECRET OBJECT',
+        prompt: 'Find an everyday OBJECT that could hide a story.',
+        property: 'groups',
+        value: 'objects',
+      ),
     ],
   ),
   SpotMission(
@@ -75,9 +108,24 @@ const _missions = <SpotMission>[
     mode: EnvironmentMode.indoor,
     allowedSettings: ['kitchen', 'dining', 'shop'],
     clues: [
-      SpotClue(title: 'FOOD CLUE', prompt: 'Find something that can be FOOD.', property: 'groups', value: 'food'),
-      SpotClue(title: 'COLOR CLUE', prompt: 'Find something YELLOW.', property: 'colors', value: 'yellow'),
-      SpotClue(title: 'SHAPE CLUE', prompt: 'Find something ROUND.', property: 'shapes', value: 'round'),
+      SpotClue(
+        title: 'FOOD CLUE',
+        prompt: 'Find something that can be FOOD.',
+        property: 'groups',
+        value: 'food',
+      ),
+      SpotClue(
+        title: 'COLOR CLUE',
+        prompt: 'Find something YELLOW.',
+        property: 'colors',
+        value: 'yellow',
+      ),
+      SpotClue(
+        title: 'SHAPE CLUE',
+        prompt: 'Find something ROUND.',
+        property: 'shapes',
+        value: 'round',
+      ),
     ],
   ),
   SpotMission(
@@ -87,9 +135,24 @@ const _missions = <SpotMission>[
     mode: EnvironmentMode.outdoor,
     allowedSettings: ['garden', 'park', 'forest', 'beach', 'road'],
     clues: [
-      SpotClue(title: 'COLOR CLUE', prompt: 'Find something GREEN outside.', property: 'colors', value: 'green'),
-      SpotClue(title: 'LIVING WORLD', prompt: 'Find something from the world of PLANTS.', property: 'groups', value: 'plants'),
-      SpotClue(title: 'SHAPE CLUE', prompt: 'Find something ROUND outside.', property: 'shapes', value: 'round'),
+      SpotClue(
+        title: 'COLOR CLUE',
+        prompt: 'Find something GREEN outside.',
+        property: 'colors',
+        value: 'green',
+      ),
+      SpotClue(
+        title: 'LIVING WORLD',
+        prompt: 'Find something from the world of PLANTS.',
+        property: 'groups',
+        value: 'plants',
+      ),
+      SpotClue(
+        title: 'SHAPE CLUE',
+        prompt: 'Find something ROUND outside.',
+        property: 'shapes',
+        value: 'round',
+      ),
     ],
   ),
   SpotMission(
@@ -99,9 +162,24 @@ const _missions = <SpotMission>[
     mode: EnvironmentMode.outdoor,
     allowedSettings: ['garden', 'park', 'forest'],
     clues: [
-      SpotClue(title: 'PLANT CLUE', prompt: 'Find a PLANT.', property: 'groups', value: 'plants'),
-      SpotClue(title: 'GREEN CLUE', prompt: 'Find something GREEN.', property: 'colors', value: 'green'),
-      SpotClue(title: 'NATURE CLUE', prompt: 'Find another thing from NATURE.', property: 'groups', value: 'plants'),
+      SpotClue(
+        title: 'PLANT CLUE',
+        prompt: 'Find a PLANT.',
+        property: 'groups',
+        value: 'plants',
+      ),
+      SpotClue(
+        title: 'GREEN CLUE',
+        prompt: 'Find something GREEN.',
+        property: 'colors',
+        value: 'green',
+      ),
+      SpotClue(
+        title: 'NATURE CLUE',
+        prompt: 'Find another thing from NATURE.',
+        property: 'groups',
+        value: 'plants',
+      ),
     ],
   ),
 ];
@@ -122,7 +200,10 @@ class _SpotScreenState extends State<SpotScreen> {
   static final Map<EnvironmentMode, List<String>> _missionBags = {};
   static final Map<EnvironmentMode, String> _lastMissionByMode = {};
 
-  static SpotMission _drawMission(List<SpotMission> pool, EnvironmentMode mode) {
+  static SpotMission _drawMission(
+    List<SpotMission> pool,
+    EnvironmentMode mode,
+  ) {
     final bag = _missionBags.putIfAbsent(mode, () => <String>[]);
     if (bag.isEmpty) {
       bag.addAll(pool.map((mission) => mission.id));
@@ -145,18 +226,22 @@ class _SpotScreenState extends State<SpotScreen> {
   Uint8List? photo;
   IdentifiedCatalogItem? identified;
   bool analyzing = false;
+  // When set, the child picks from pictures instead of using a photo. This
+  // works without a camera or internet, and sends nothing anywhere.
+  List<CatalogItem>? _pickOptions;
   late SpotMission mission;
   String status = '';
   CatalogItem? revealItem;
   DiscoveryPack? revealPack;
   int revealStage = 0;
   String? whatIfChoice;
+  // A "discover anything" find (an object outside the game's own catalogue).
+  OpenOutcome? _openFind;
+  int _openStage = 0;
+  MovementStep? _openStep;
   bool _finishStarted = false;
   final String _completionToken =
       'spot-${DateTime.now().microsecondsSinceEpoch}';
-
-  MovementProfile get _movementProfile =>
-      movementProfileFor(GameAppScope.of(context).profile.movementPreference);
 
   bool _initializedFromProfile = false;
 
@@ -185,7 +270,8 @@ class _SpotScreenState extends State<SpotScreen> {
       final original = selected[1];
       selected[1] = SpotClue(
         title: '${original.title} + SHAPE',
-        prompt: '${original.prompt.replaceFirst('.', '')} and make sure it is ROUND.',
+        prompt:
+            '${original.prompt.replaceFirst('.', '')} and make sure it is ROUND.',
         property: original.property,
         value: original.value,
         secondProperty: 'shapes',
@@ -207,8 +293,9 @@ class _SpotScreenState extends State<SpotScreen> {
     try {
       final picked = await ImagePicker().pickImage(
         source: source,
-        maxWidth: 1024,
-        imageQuality: 75,
+        // A smaller picture uploads and is identified noticeably faster.
+        maxWidth: 768,
+        imageQuality: 70,
       );
       if (picked == null) return;
       final bytes = await picked.readAsBytes();
@@ -220,22 +307,45 @@ class _SpotScreenState extends State<SpotScreen> {
       });
     } catch (_) {
       if (mounted) {
-        setState(() => status = 'Vee could not open that discovery. Let’s try another way.');
+        setState(
+          () => status =
+              'Vee could not open that discovery. Let’s try another way.',
+        );
       }
     }
   }
+
+  String _failureMessage(String failure) =>
+      failure.contains('MISSING_GROQ_API_KEY')
+      ? 'Vee’s picture helper is not connected yet. Please ask a grown-up to check the game setup.'
+      : failure.contains('IMAGE_PAYLOAD_TOO_LARGE')
+      ? 'That picture is a little too large. Try taking a new photo closer to the object.'
+      : failure.contains('INVALID_MODEL_RESULT') ||
+            failure.contains('MODEL_RETURNED_DISALLOWED_ID')
+      ? 'Vee could not match that picture. Try another photo with one object in the middle.'
+      : failure.contains('GROQ_TIMEOUT') ||
+            failure.contains('too long to respond')
+      ? 'Vee’s picture helper is taking too long. Please try again in a moment.'
+      : 'Vee could not connect to her picture helper. Please try again in a moment.';
 
   Future<void> _identify() async {
     if (photo == null || analyzing) return;
     setState(() {
       analyzing = true;
-      status = 'Vee is looking VERY closely… 🔎';
+      status = 'Vee is looking VERY closely…';
     });
     final c = GameAppScope.of(context);
     final allowed = ContentCatalog.items
         .where((item) => item.settings.any(mission.allowedSettings.contains))
         .map((e) => e.id)
         .toList();
+
+    // A grown-up can allow Vee to name any object, not just the game's own.
+    if (c.openDiscoveryEnabled) {
+      await _identifyOpen(c, allowed);
+      return;
+    }
+
     final result = await c.spotAnalyzer.identify(
       bytes: photo!.toList(),
       allowedCatalogIds: allowed,
@@ -243,25 +353,129 @@ class _SpotScreenState extends State<SpotScreen> {
     if (!mounted) return;
     if (result == null) {
       final failure = c.spotAnalyzer.lastError ?? '';
-      final message = failure.contains('MODEL_UNCERTAIN')
-          ? 'Hmm… Vee needs a clearer look. Try a closer photo!'
-          : failure.contains('MISSING_GROQ_API_KEY')
-              ? 'Vee’s picture helper is not connected yet. Please ask a grown-up to check the game setup.'
-              : failure.contains('IMAGE_PAYLOAD_TOO_LARGE')
-                  ? 'That picture is a little too large. Try taking a new photo closer to the object.'
-                  : failure.contains('INVALID_MODEL_RESULT') ||
-                          failure.contains('MODEL_RETURNED_DISALLOWED_ID')
-                      ? 'Vee could not match that picture. Try another photo with one object in the middle.'
-                      : failure.contains('GROQ_TIMEOUT') ||
-                              failure.contains('too long to respond')
-                          ? 'Vee’s picture helper is taking too long. Please try again in a moment.'
-                          : 'Vee could not connect to her picture helper. Please try again in a moment.';
+      if (failure.contains('MODEL_UNCERTAIN')) {
+        // The photo was fine; the object just is not one Vee knows. Say so and
+        // offer the objects she does know.
+        setState(() {
+          analyzing = false;
+          status = 'Vee doesn’t know that one yet! Pick one of these, or ask a grown-up to turn on “Discover anything”.';
+          _pickOptions = _pickCandidates();
+        });
+        return;
+      }
       setState(() {
         analyzing = false;
-        status = message;
+        status = _failureMessage(failure);
       });
       return;
     }
+    _applyResult(result);
+  }
+
+  Future<void> _identifyOpen(AppController c, List<String> allowed) async {
+    final profile = movementProfileFor(c.profile.movementPreference);
+    final movementIds = MovementCatalog.forProfile(profile)
+        .map((m) => m.id)
+        .toList();
+    final outcome = await c.openDiscoveryService.discover(
+      bytes: photo!.toList(),
+      allowedCatalogIds: allowed,
+      movementIds: movementIds,
+      cluePrompt: mission.clues[clueIndex].prompt,
+    );
+    if (!mounted) return;
+    if (outcome == null) {
+      setState(() {
+        analyzing = false;
+        status = _failureMessage(c.openDiscoveryService.lastError ?? '');
+      });
+      return;
+    }
+    switch (outcome.kind) {
+      case OpenOutcomeKind.person:
+        // Nothing is described or kept. The photo is dropped straight away.
+        setState(() {
+          analyzing = false;
+          photo = null;
+          identified = null;
+          status = 'I only look at things, not people! Can you find an object?';
+        });
+      case OpenOutcomeKind.blocked:
+        setState(() {
+          analyzing = false;
+          photo = null;
+          identified = null;
+          status = 'Let’s find something else! Try a different object.';
+        });
+      case OpenOutcomeKind.unsure:
+        final question = OpenDiscoveryRules
+            .questions[_random.nextInt(OpenDiscoveryRules.questions.length)];
+        setState(() {
+          analyzing = false;
+          status =
+              'Hmm, I can’t quite tell what that is. $question Try a closer photo!';
+        });
+      case OpenOutcomeKind.catalog:
+        _applyResult(
+          IdentifiedCatalogItem(
+            catalogId: outcome.catalogId!,
+            confidence: outcome.confidence,
+          ),
+        );
+      case OpenOutcomeKind.find:
+        _applyOpenFind(c, outcome, profile);
+    }
+  }
+
+  void _applyOpenFind(
+    AppController c,
+    OpenOutcome find,
+    MovementProfile profile,
+  ) {
+    final name = find.name ?? 'thing';
+    final clue = mission.clues[clueIndex];
+    if (!find.fitsClue) {
+      setState(() {
+        analyzing = false;
+        status =
+            'That’s ${OpenDiscoveryRules.withArticle(name)}! A fun find, but it doesn’t fit this clue. ${clue.prompt}';
+      });
+      return;
+    }
+    final options = MovementCatalog.forProfile(profile);
+    final movementId =
+        find.movementId ?? options[_random.nextInt(options.length)].id;
+    c.addDiscovery('mystery-${OpenDiscoveryRules.slug(name)}');
+    c.scheduleSave();
+    setState(() {
+      analyzing = false;
+      identified = null;
+      _openFind = find;
+      _openStage = 0;
+      _openStep = MovementCatalog.stepFor(
+        movementId,
+        profile,
+        age: c.profile.age,
+      );
+      completed++;
+      status = '';
+    });
+  }
+
+  void _nextOpen() {
+    final find = _openFind;
+    if (find == null) return;
+    setState(() {
+      if (_openStage == 0) {
+        _openStage = find.facts.isEmpty ? 2 : 1;
+      } else {
+        _openStage = 2;
+      }
+    });
+  }
+
+  /// Checks a result (from a photo or from a picture pick) against the clue.
+  void _applyResult(IdentifiedCatalogItem result) {
     final item = ContentCatalog.get(result.catalogId);
     final clue = mission.clues[clueIndex];
     final matches = item != null && _matches(item, clue);
@@ -280,7 +494,7 @@ class _SpotScreenState extends State<SpotScreen> {
       analyzing = false;
       identified = result;
       revealItem = item;
-      revealPack = DiscoveryEngine.forItem(item!);
+      revealPack = DiscoveryEngine.forItem(item);
       revealStage = 0;
       whatIfChoice = null;
       completed++;
@@ -288,14 +502,29 @@ class _SpotScreenState extends State<SpotScreen> {
     });
   }
 
+  List<CatalogItem> _pickCandidates() {
+    final allowed = ContentCatalog.items
+        .where((item) => item.settings.any(mission.allowedSettings.contains))
+        .toList();
+    final clue = mission.clues[clueIndex];
+    final matching = allowed.where((item) => _matches(item, clue)).toList()
+      ..shuffle(_random);
+    final others = allowed.where((item) => !_matches(item, clue)).toList()
+      ..shuffle(_random);
+    return <CatalogItem>[...matching.take(2), ...others.take(4)]
+      ..shuffle(_random);
+  }
+
   bool _matches(CatalogItem item, SpotClue clue) {
     if (!item.settings.any(mission.allowedSettings.contains)) return false;
     final values = item.properties[clue.property] ?? const <String>[];
-    final first = values.contains(clue.value) ||
+    final first =
+        values.contains(clue.value) ||
         (clue.value == 'objects' && item.category == 'object');
     if (!first) return false;
     if (clue.secondProperty == null) return true;
-    final secondValues = item.properties[clue.secondProperty!] ?? const <String>[];
+    final secondValues =
+        item.properties[clue.secondProperty!] ?? const <String>[];
     return secondValues.contains(clue.secondValue) ||
         (clue.secondValue == 'objects' && item.category == 'object');
   }
@@ -310,7 +539,10 @@ class _SpotScreenState extends State<SpotScreen> {
       return;
     }
     if (revealStage == 1) {
-      final event = DiscoveryEngine.randomEvent(pack.surpriseIds, mode: mission.mode);
+      final event = DiscoveryEngine.randomEvent(
+        pack.surpriseIds,
+        mode: mission.mode,
+      );
       setState(() {
         revealStage = 2;
         status = event.message;
@@ -335,7 +567,11 @@ class _SpotScreenState extends State<SpotScreen> {
         revealPack = null;
         revealStage = 0;
         whatIfChoice = null;
-        status = 'A NEW CLUE just appeared! ✨';
+        _openFind = null;
+        _openStage = 0;
+        _openStep = null;
+        _pickOptions = null;
+        status = 'A NEW CLUE just appeared!';
       });
       return;
     }
@@ -349,7 +585,10 @@ class _SpotScreenState extends State<SpotScreen> {
     final c = GameAppScope.of(context);
     final item = revealItem;
     final pack = revealPack;
-    final discovery = item == null || pack == null
+    final open = _openFind;
+    final discovery = open != null
+        ? 'You discovered ${OpenDiscoveryRules.withArticle(open.name ?? 'something new')}!'
+        : item == null || pack == null
         ? 'You solved Vee’s mystery trail.'
         : pack.wowDiscoveries.first;
 
@@ -381,58 +620,358 @@ class _SpotScreenState extends State<SpotScreen> {
   @override
   Widget build(BuildContext context) {
     final clue = mission.clues[clueIndex];
+    final opening = _openFind != null;
+    final revealing = opening || (revealItem != null && revealPack != null);
     return WorldShell(
-      left: Image.asset('assets/vee/vee_encourage.webp', fit: BoxFit.contain),
-      speech: revealItem == null
-          ? (clueIndex == 0 ? mission.opening : 'The next clue is ready. Keep those detective eyes switched on!')
-          : 'You found ${revealItem!.name}! But that is only the beginning…',
-      eyebrow: '${mission.mode.emoji} SPOT • ${completed}/${mission.clues.length}',
+      scene: revealing ? SceneKind.closeup : null,
+      stepLabel: 'Spot',
+      stepCurrent: clueIndex,
+      stepTotal: mission.clues.length,
+      left: opening
+          ? _openRevealPicture()
+          : revealing
+          ? _revealPicture()
+          : _veeSide(),
+      speech: revealing || clueIndex > 0 ? null : mission.opening,
       onRestartMission: () => replaceTo(context, const SpotScreen()),
       onMainMenu: () => replaceTo(context, const AdventureHub()),
-      right: _panel(clue),
+      right: opening
+          ? _openMoment()
+          : revealing
+          ? _discoveryMoment()
+          : _panel(clue),
     );
   }
 
+  Widget _veeSide() => VeeAvatar(
+    pose: analyzing ? VeePose.thinking : VeePose.spot,
+    bounce: completed,
+  );
+
+  /// The big picture of the thing that was found, with Vee peeking in.
+  Widget _revealPicture() {
+    final item = revealItem!;
+    return LayoutBuilder(
+      builder: (context, box) {
+        final big = math.min(box.maxWidth * .95, box.maxHeight * .72);
+        return Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Align(
+              alignment: const Alignment(0, -.4),
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey<int>(revealStage),
+                tween: Tween<double>(begin: .6, end: 1),
+                duration: const Duration(milliseconds: 450),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
+                child: ItemIcon(item, size: big),
+              ),
+            ),
+            Align(
+              alignment: const Alignment(-.9, 1),
+              child: SizedBox(
+                height: box.maxHeight * .46,
+                child: VeeAvatar(
+                  pose: revealStage == 2 ? VeePose.surprised : VeePose.spot,
+                  bounce: completed + revealStage,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  /// The child's own photo, framed, with Vee peeking in. It never leaves the
+  /// device from here on; it is dropped when the clue moves on.
+  Widget _openRevealPicture() {
+    final bytes = photo;
+    return LayoutBuilder(
+      builder: (context, box) {
+        final size = math.min(box.maxWidth * .92, box.maxHeight * .7);
+        return Stack(
+          alignment: Alignment.bottomCenter,
+          children: [
+            Align(
+              alignment: const Alignment(0, -.4),
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey<int>(_openStage),
+                tween: Tween<double>(begin: .6, end: 1),
+                duration: const Duration(milliseconds: 450),
+                curve: Curves.easeOutBack,
+                builder: (context, scale, child) =>
+                    Transform.scale(scale: scale, child: child),
+                child: Container(
+                  width: size,
+                  height: size * .8,
+                  decoration: BoxDecoration(
+                    color: VeeTokens.cardWhite,
+                    borderRadius: BorderRadius.circular(40),
+                    border: Border.all(color: VeeTokens.cardWhite, width: 6),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: VeeTokens.shadow,
+                        blurRadius: 20,
+                        offset: Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(34),
+                    child: bytes == null
+                        ? const Icon(
+                            Icons.search_rounded,
+                            size: 80,
+                            color: VeeTokens.teal,
+                          )
+                        : Image.memory(
+                            bytes,
+                            fit: BoxFit.cover,
+                            gaplessPlayback: true,
+                          ),
+                  ),
+                ),
+              ),
+            ),
+            Align(
+              alignment: const Alignment(-.9, 1),
+              child: SizedBox(
+                height: box.maxHeight * .46,
+                child: VeeAvatar(
+                  pose: _openStage == 2 ? VeePose.celebration : VeePose.spot,
+                  bounce: completed + _openStage,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _openMoment() {
+    final find = _openFind!;
+    final name = find.name ?? 'thing';
+    final facts = find.facts;
+    final noun = OpenDiscoveryRules.withArticle(name);
+
+    final Widget tag;
+    final String heading;
+    String? body;
+    final Widget action;
+    Widget? footer;
+
+    switch (_openStage) {
+      case 0:
+        tag = const PillTag.coral('You found it!');
+        heading = 'Yes! ${OpenDiscoveryRules.sentenceCase(noun)}!';
+        body = facts.isEmpty
+            ? 'It fits the clue. Now let’s move like a champion!'
+            : 'It fits the clue. Want to learn something about it?';
+        action = _button(
+          facts.isEmpty ? 'Let’s move!' : 'Tell me more!',
+          _nextOpen,
+          VeeTokens.teal,
+          icon: Icons.arrow_forward_rounded,
+        );
+      case 1:
+        tag = const PillTag.coral('Look closer');
+        heading = facts.first;
+        body = facts.length > 1 ? facts[1] : null;
+        action = _button(
+          'Make something happen!',
+          _nextOpen,
+          VeeTokens.teal,
+          icon: Icons.arrow_forward_rounded,
+        );
+        footer = const SceneCaption('A grown-up can check this fact with you.');
+      default:
+        tag = const PillTag.coral('Your move!');
+        heading = 'Time to move!';
+        action = MovementChallenge(
+          key: ValueKey<String>('open-move-$clueIndex'),
+          step: _openStep!,
+          onComplete: () {
+            Future<void>.delayed(const Duration(milliseconds: 700), () {
+              if (mounted && _openFind != null) _advanceClue();
+            });
+          },
+        );
+    }
+
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 300),
+      child: Column(
+        key: ValueKey<int>(_openStage),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          tag,
+          const SizedBox(height: 14),
+          Text(
+            heading,
+            style: const TextStyle(
+              fontSize: 44,
+              height: 1.04,
+              fontWeight: FontWeight.w900,
+              color: VeeTokens.textOnLight,
+            ),
+          ),
+          if (body != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              body,
+              style: const TextStyle(
+                fontSize: 26,
+                height: 1.2,
+                fontWeight: FontWeight.w700,
+                color: VeeTokens.textOnLight,
+              ),
+            ),
+          ],
+          if (footer != null) ...[const SizedBox(height: 10), footer],
+          const SizedBox(height: 20),
+          action,
+        ],
+      ),
+    );
+  }
+
+  /// Up to two real examples of what the clue is asking for.
+  List<CatalogItem> _examplesFor(SpotClue clue) => ContentCatalog.items
+      .where(
+        (item) =>
+            item.settings.any(mission.allowedSettings.contains) &&
+            _matches(item, clue),
+      )
+      .take(2)
+      .toList();
+
   Widget _panel(SpotClue clue) {
-    if (revealItem != null && revealPack != null) return _discoveryMoment();
+    final examples = _examplesFor(clue);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(mission.title, style: Theme.of(context).textTheme.headlineMedium, textAlign: TextAlign.center),
-        const SizedBox(height: 6),
-        Text(clue.title, style: Theme.of(context).textTheme.labelLarge?.copyWith(color: VeeTokens.teal, letterSpacing: 1.4)),
-        const SizedBox(height: 8),
-        Text(clue.prompt, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+        PillTag(clueIndex == 0 ? 'Your first clue' : 'Your next clue'),
+        const SizedBox(height: 14),
+        Text(
+          clue.prompt,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 46,
+            height: 1.04,
+            fontWeight: FontWeight.w900,
+            color: VeeTokens.textOnLight,
+          ),
+        ),
         const SizedBox(height: 14),
         if (photo != null)
           ClipRRect(
-            borderRadius: BorderRadius.circular(22),
-            child: Image.memory(photo!, width: 220, height: 145, fit: BoxFit.cover),
+            borderRadius: BorderRadius.circular(28),
+            child: Image.memory(
+              photo!,
+              width: 240,
+              height: 160,
+              fit: BoxFit.cover,
+            ),
+          )
+        else if (examples.isNotEmpty)
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SparkleDashes(size: 36, rotation: -.3),
+              const SizedBox(width: 8),
+              for (final item in examples) ...[
+                ItemIcon(item, size: 92),
+                const SizedBox(width: 10),
+              ],
+              Transform.scale(
+                scaleX: -1,
+                child: const SparkleDashes(size: 36, rotation: -.3),
+              ),
+            ],
+          ),
+        if (photo == null)
+          const Padding(
+            padding: EdgeInsets.only(top: 4),
+            child: Text(
+              'Look around you.',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
+                color: VeeTokens.textOnLight,
+              ),
+            ),
           ),
         if (identified != null) ...[
           const SizedBox(height: 8),
           Text(
-            ContentCatalog.get(identified!.catalogId)?.name ?? identified!.catalogId,
-            style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900),
+            ContentCatalog.get(identified!.catalogId)?.name ??
+                identified!.catalogId,
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: VeeTokens.textOnLight,
+            ),
           ),
         ],
         if (status.isNotEmpty) ...[
           const SizedBox(height: 10),
           _StatusPill(text: status),
         ],
-        const SizedBox(height: 14),
-        if (photo == null)
-          Wrap(
-            alignment: WrapAlignment.center,
-            spacing: 10,
-            runSpacing: 10,
+        if (analyzing)
+          const Padding(
+            padding: EdgeInsets.only(top: 12),
+            child: BouncingDots(),
+          ),
+        const SizedBox(height: 16),
+        if (_pickOptions != null)
+          _pickPanel()
+        else if (photo == null)
+          Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
-              _button('📷 Find with Camera', () => _pick(ImageSource.camera), VeeTokens.teal),
-              _button('🖼️ Choose a Photo', () => _pick(ImageSource.gallery), VeeTokens.yellow),
+              _button(
+                'Take a photo',
+                () => _pick(ImageSource.camera),
+                VeeTokens.teal,
+                icon: Icons.photo_camera_rounded,
+              ),
+              const SizedBox(height: 12),
+              _button(
+                'Choose a photo',
+                () => _pick(ImageSource.gallery),
+                VeeTokens.yellow,
+                icon: Icons.image_outlined,
+              ),
+              TextButton(
+                onPressed: () => setState(() {
+                  _pickOptions = _pickCandidates();
+                  status = '';
+                }),
+                child: const Text(
+                  'No camera? Pick from pictures',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: VeeTokens.teal,
+                    decoration: TextDecoration.underline,
+                    decorationColor: VeeTokens.teal,
+                  ),
+                ),
+              ),
             ],
           )
         else
-          _button(analyzing ? '🔎 Vee is looking…' : '✨ Reveal my discovery', _identify, VeeTokens.yellow),
+          _button(
+            analyzing ? 'Vee is looking…' : 'Reveal my discovery',
+            analyzing ? null : _identify,
+            VeeTokens.teal,
+            icon: Icons.auto_awesome_rounded,
+          ),
         if (photo != null && !analyzing)
           TextButton(
             onPressed: () => setState(() {
@@ -440,8 +979,90 @@ class _SpotScreenState extends State<SpotScreen> {
               identified = null;
               status = '';
             }),
-            child: const Text('Try a different discovery'),
+            child: const Text(
+              'Try a different photo',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                color: VeeTokens.teal,
+                decoration: TextDecoration.underline,
+                decorationColor: VeeTokens.teal,
+              ),
+            ),
           ),
+        const SizedBox(height: 6),
+        const SceneCaption('Stay with your grown-up.'),
+      ],
+    );
+  }
+
+  Widget _pickPanel() {
+    final options = _pickOptions ?? const <CatalogItem>[];
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 12,
+          children: options
+              .map(
+                (item) => JuicyTap(
+                  onTap: () => _applyResult(
+                    IdentifiedCatalogItem(catalogId: item.id, confidence: 1),
+                  ),
+                  child: Container(
+                    width: 120,
+                    padding: const EdgeInsets.fromLTRB(8, 12, 8, 10),
+                    decoration: BoxDecoration(
+                      color: VeeTokens.cardWhite,
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: VeeTokens.shadow,
+                          blurRadius: 10,
+                          offset: Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ItemIcon(item, size: 56),
+                        const SizedBox(height: 4),
+                        Text(
+                          item.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: VeeTokens.textOnLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+        ),
+        TextButton(
+          onPressed: () => setState(() {
+            _pickOptions = null;
+            status = '';
+          }),
+          child: const Text(
+            'Use a photo instead',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: VeeTokens.teal,
+              decoration: TextDecoration.underline,
+              decorationColor: VeeTokens.teal,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -452,108 +1073,131 @@ class _SpotScreenState extends State<SpotScreen> {
     final event = revealStage >= 2
         ? DiscoveryEngine.randomEvent(pack.surpriseIds, mode: mission.mode)
         : null;
+    final lastClue = clueIndex == mission.clues.length - 1;
 
-    String title;
-    String body;
-    String emoji;
+    Widget tag;
+    String heading;
+    String? body;
     String button;
+    IconData buttonIcon = Icons.arrow_forward_rounded;
 
     switch (revealStage) {
       case 0:
-        title = '🎉 YOU FOUND IT!';
-        body = '${item.emoji} ${item.name} matches the clue. But Vee noticed something unusual…';
-        emoji = item.emoji;
+        tag = const PillTag.coral('You found it!');
+        heading = 'Yes! A ${item.name}!';
+        body = 'It matches the clue. But Vee noticed something unusual…';
         button = 'What did Vee notice?';
         break;
       case 1:
-        title = '🔎 LOOK CLOSER';
-        body = pack.wowDiscoveries[(clueIndex + completed) % pack.wowDiscoveries.length];
-        emoji = '👀';
+        tag = const PillTag.coral('Look closer');
+        heading =
+            pack.wowDiscoveries[(clueIndex + completed) %
+                pack.wowDiscoveries.length];
+        body = null;
         button = 'Make something happen!';
         break;
       case 2:
-        title = event!.title;
+        tag = const PillTag.coral('Surprise!');
+        heading = event!.title;
         body = '${event.message}\n\n${pack.reaction}';
-        emoji = event.emoji;
         button = 'One more mystery…';
         break;
       default:
-        title = '🤔 WHAT DO YOU THINK?';
-        body = pack.whatIfPrompts.first;
-        emoji = '💭';
-        button = 'Reveal the answer';
+        tag = const PillTag(
+          'What if…?',
+          color: VeeTokens.yellow,
+          showLeaf: false,
+        );
+        heading = pack.whatIfPrompts.first;
+        body = null;
+        button = lastClue ? 'Finish the mystery!' : 'Next clue';
+        if (whatIfChoice != null) {
+          heading = whatIfChoice!;
+          body = pack.whatIfAnswer;
+        }
     }
 
-    if (revealStage == 3 && whatIfChoice != null) {
-      body = '$whatIfChoice\n\n${pack.whatIfAnswer}';
-      button = clueIndex == mission.clues.length - 1 ? 'Finish the mystery!' : 'Find the next clue!';
-    }
+    final needsChoice = revealStage == 3 && whatIfChoice == null;
 
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
-      child: Container(
+      child: Column(
         key: ValueKey('$revealStage-$whatIfChoice'),
-        constraints: const BoxConstraints(maxWidth: 610),
-        padding: const EdgeInsets.all(22),
-        decoration: BoxDecoration(
-          color: VeeTokens.cream,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: const [BoxShadow(color: VeeTokens.shadow, blurRadius: 18, offset: Offset(0, 8))],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedScale(
-              scale: 1,
-              duration: const Duration(milliseconds: 350),
-              child: Text(emoji, style: const TextStyle(fontSize: 54)),
-            ),
-            const SizedBox(height: 7),
-            Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900,
-              color: VeeTokens.textOnLight)),
-            const SizedBox(height: 9),
-            Text(body, textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, height: 1.3, fontWeight: FontWeight.w700,
-              color: VeeTokens.textSecondaryOnLight)),
-            if (revealStage == 3 && whatIfChoice == null) ...[
-              const SizedBox(height: 13),
-              Wrap(
-                alignment: WrapAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
-                children: pack.whatIfChoices.map((choice) => _choiceChip(choice)).toList(),
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              tag,
+              const Positioned(
+                right: -50,
+                top: -26,
+                child: SparkleDashes(size: 44, rotation: .2),
               ),
             ],
-            const SizedBox(height: 15),
-            if (revealStage != 3 || whatIfChoice != null)
-              _button(button, _nextReveal, VeeTokens.yellow),
+          ),
+          const SizedBox(height: 14),
+          Text(
+            heading,
+            style: const TextStyle(
+              fontSize: 46,
+              height: 1.04,
+              fontWeight: FontWeight.w900,
+              color: VeeTokens.textOnLight,
+            ),
+          ),
+          if (body != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              body,
+              style: const TextStyle(
+                fontSize: 26,
+                height: 1.2,
+                fontWeight: FontWeight.w700,
+                color: VeeTokens.textOnLight,
+              ),
+            ),
           ],
-        ),
+          if (needsChoice) ...[
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: pack.whatIfChoices.map(_choiceChip).toList(),
+            ),
+          ] else ...[
+            const SizedBox(height: 22),
+            _button(button, _nextReveal, VeeTokens.teal, icon: buttonIcon),
+          ],
+        ],
       ),
     );
   }
 
-  Widget _choiceChip(String choice) => GestureDetector(
-        onTap: () => setState(() => whatIfChoice = choice),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-          decoration: BoxDecoration(color: VeeTokens.white, borderRadius: BorderRadius.circular(18), border: Border.all(color: VeeTokens.teal.withOpacity(.25),
-            width: 2)),
-          child: Text(choice, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800,
-            color: VeeTokens.textOnLight)),
-        ),
-      );
+  Widget _choiceChip(String choice) => VeeButton(
+    outlined: true,
+    minWidth: 120,
+    fontSize: 20,
+    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 12),
+    onPressed: () => setState(() => whatIfChoice = choice),
+    child: Text(choice),
+  );
 
-  Widget _button(String label, VoidCallback onTap, Color color) => GestureDetector(
-        onTap: onTap,
-        child: Container(
-          constraints: const BoxConstraints(minWidth: 190, maxWidth: 360),
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(20), boxShadow: const [BoxShadow(color: VeeTokens.shadow,
-            blurRadius: 10, offset: Offset(0, 5))]),
-          alignment: Alignment.center,
-          child: Text(label, textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w900, color: VeeTextContrast.foregroundFor(color))),
-        ),
-      );
+  /// Teal pill for the main action; any other colour becomes the outlined
+  /// second-choice pill.
+  Widget _button(
+    String label,
+    VoidCallback? onTap,
+    Color color, {
+    IconData? icon,
+  }) => VeeButton(
+    onPressed: onTap,
+    outlined: color != VeeTokens.teal,
+    icon: icon,
+    minWidth: 300,
+    child: Text(label),
+  );
 }
 
 class _StatusPill extends StatelessWidget {
@@ -562,8 +1206,19 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(color: VeeTokens.white.withOpacity(.88), borderRadius: BorderRadius.circular(18)),
-        child: Text(text, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800, color: VeeTokens.textOnLight)),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+    decoration: BoxDecoration(
+      color: VeeTokens.mint,
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Text(
+      text,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        fontSize: 18,
+        fontWeight: FontWeight.w800,
+        color: VeeTokens.textOnLight,
+      ),
+    ),
+  );
 }

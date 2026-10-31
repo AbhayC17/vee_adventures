@@ -4,7 +4,7 @@ import 'package:vees_adventures/app/design_tokens.dart';
 import 'package:vees_adventures/app/theme.dart';
 
 void main() {
-  group("Vee's Adventures contrast design system", () {
+  group("Movement Missions contrast design system", () {
     test('normal text pairs meet WCAG AA (4.5:1)', () {
       const lightSurfaces = <Color>[
         VeeTokens.cream,
@@ -12,6 +12,8 @@ void main() {
         VeeTokens.white,
         VeeTokens.mint,
         VeeTokens.paleGreen,
+        VeeTokens.softMint,
+        VeeTokens.cardWhite,
         VeeTokens.yellow,
         VeeTokens.sky,
         VeeTokens.leaf,
@@ -24,20 +26,32 @@ void main() {
       ];
 
       for (final background in lightSurfaces) {
-        final ratio = VeeTokens.contrastRatio(VeeTokens.textOnLight, background);
+        final ratio = VeeTokens.contrastRatio(
+          VeeTokens.textOnLight,
+          background,
+        );
         expect(
           ratio,
           greaterThanOrEqualTo(4.5),
-          reason: 'Dark text must pass on light surface $background (ratio $ratio)',
+          reason:
+              'Dark text must pass on light surface $background (ratio $ratio)',
         );
       }
 
-      for (final background in <Color>[VeeTokens.cream, VeeTokens.white, VeeTokens.mint]) {
-        final ratio = VeeTokens.contrastRatio(VeeTokens.textSecondaryOnLight, background);
+      for (final background in <Color>[
+        VeeTokens.cream,
+        VeeTokens.white,
+        VeeTokens.mint,
+      ]) {
+        final ratio = VeeTokens.contrastRatio(
+          VeeTokens.textSecondaryOnLight,
+          background,
+        );
         expect(
           ratio,
           greaterThanOrEqualTo(4.5),
-          reason: 'Secondary text must pass on light surface $background (ratio $ratio)',
+          reason:
+              'Secondary text must pass on light surface $background (ratio $ratio)',
         );
       }
     });
@@ -57,9 +71,18 @@ void main() {
         expect(
           ratio,
           greaterThanOrEqualTo(4.5),
-          reason: 'Light text must pass on dark surface $background (ratio $ratio)',
+          reason:
+              'Light text must pass on dark surface $background (ratio $ratio)',
         );
       }
+    });
+
+    test('white text on the coral tag passes the large-text bar (3:1)', () {
+      // The tag text is 20px bold, which WCAG treats as large text.
+      expect(
+        VeeTokens.contrastRatio(VeeTokens.textOnDark, VeeTokens.coral),
+        greaterThanOrEqualTo(3.0),
+      );
     });
 
     test('brand text accent passes on approved pale surfaces', () {
@@ -73,7 +96,8 @@ void main() {
         expect(
           ratio,
           greaterThanOrEqualTo(4.5),
-          reason: 'Teal text must pass on approved pale surface $background (ratio $ratio)',
+          reason:
+              'Teal text must pass on approved pale surface $background (ratio $ratio)',
         );
       }
     });
@@ -101,14 +125,30 @@ void main() {
       for (final style in styles) {
         final foreground = style?.color ?? theme.colorScheme.onSurface;
         final ratio = VeeTokens.contrastRatio(foreground, VeeTokens.cream);
-        expect(ratio, greaterThanOrEqualTo(4.5), reason: 'Unreadable text style: $style ($ratio)');
+        expect(
+          ratio,
+          greaterThanOrEqualTo(4.5),
+          reason: 'Unreadable text style: $style ($ratio)',
+        );
       }
     });
 
-    test('automatic foreground selects readable text for common button colours', () {
-      expect(VeeTokens.readableForeground(VeeTokens.teal), VeeTokens.textOnDark);
-      expect(VeeTokens.readableForeground(VeeTokens.yellow), VeeTokens.textOnLight);
-      expect(VeeTokens.readableForeground(VeeTokens.cream), VeeTokens.textOnLight);
-    });
+    test(
+      'automatic foreground selects readable text for common button colours',
+      () {
+        expect(
+          VeeTokens.readableForeground(VeeTokens.teal),
+          VeeTokens.textOnDark,
+        );
+        expect(
+          VeeTokens.readableForeground(VeeTokens.yellow),
+          VeeTokens.textOnLight,
+        );
+        expect(
+          VeeTokens.readableForeground(VeeTokens.cream),
+          VeeTokens.textOnLight,
+        );
+      },
+    );
   });
 }

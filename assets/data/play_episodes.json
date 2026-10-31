@@ -3,60 +3,216 @@
     "id": "lost_treasure",
     "title": "The Treasure That Moved",
     "hook": "Vee found a treasure map… but the treasure keeps moving whenever nobody is looking!",
-    "paths": ["Garden Path", "Rocky Path", "Secret Tree"],
+    "paths": [
+      "Garden Path",
+      "Rocky Path",
+      "Secret Tree"
+    ],
     "setting": "garden",
     "objectId": "rock",
     "mode": "outdoor",
-    "surpriseIds": ["mineral_sparkle", "tree_hidden_hollow", "tiny_trail"]
+    "surpriseIds": [
+      "mineral_sparkle",
+      "tree_hidden_hollow",
+      "tiny_trail"
+    ]
   },
   {
     "id": "park_mystery",
     "title": "The Glowing Trail",
     "hook": "A glowing trail appeared in the park. Vee thinks it is leading to something that should not be missed.",
-    "paths": ["Flower Path", "Tree Path", "Quiet Grove"],
+    "paths": [
+      "Flower Path",
+      "Tree Path",
+      "Quiet Grove"
+    ],
     "setting": "park",
     "objectId": "flower",
     "mode": "outdoor",
-    "surpriseIds": ["butterfly_follow", "flower_bloom", "hidden_pollen"]
+    "surpriseIds": [
+      "butterfly_follow",
+      "flower_bloom",
+      "hidden_pollen"
+    ]
   },
   {
     "id": "beach_rescue",
     "title": "The Wave’s Secret",
     "hook": "A tiny clue washed onto the shore. Can you discover what the next wave is trying to reveal?",
-    "paths": ["Shell Trail", "Rocky Shore", "Water Path"],
+    "paths": [
+      "Shell Trail",
+      "Rocky Shore",
+      "Water Path"
+    ],
     "setting": "beach",
     "objectId": "water",
     "mode": "outdoor",
-    "surpriseIds": ["tiny_rainbow", "water_shape_shift", "rock_time_trail"]
+    "surpriseIds": [
+      "tiny_rainbow",
+      "water_shape_shift",
+      "rock_time_trail"
+    ]
   },
   {
     "id": "mystery_party",
     "title": "The Birthday Surprise",
     "hook": "The party is ready… but the BIG surprise has disappeared. Vee needs a clever party detective!",
-    "paths": ["Gift Table", "Balloon Trail", "Snack Corner"],
+    "paths": [
+      "Gift Table",
+      "Balloon Trail",
+      "Snack Corner"
+    ],
     "setting": "birthday_party",
     "objectId": "balloon",
     "mode": "indoor",
-    "surpriseIds": ["balloon_zoom", "balloon_pop_safe", "toy_portal"]
+    "surpriseIds": [
+      "balloon_zoom",
+      "balloon_pop_safe",
+      "toy_portal"
+    ]
   },
   {
     "id": "secret_bedroom",
     "title": "The Thing Under the Bed",
     "hook": "Something magical moved under the bed. It left a tiny trail… and Vee is curious.",
-    "paths": ["Book Shelf", "Toy Corner", "Pillow Fort"],
+    "paths": [
+      "Book Shelf",
+      "Toy Corner",
+      "Pillow Fort"
+    ],
     "setting": "bedroom",
     "objectId": "toy",
     "mode": "indoor",
-    "surpriseIds": ["toy_portal", "page_portal", "hidden_button"]
+    "surpriseIds": [
+      "toy_portal",
+      "page_portal",
+      "hidden_button"
+    ]
   },
   {
     "id": "kitchen_magic",
     "title": "The Kitchen That Woke Up",
     "hook": "The kitchen objects are glowing one by one. Vee needs help finding out why!",
-    "paths": ["Fruit Basket", "Table Trail", "Cupboard Clue"],
+    "paths": [
+      "Fruit Basket",
+      "Table Trail",
+      "Cupboard Clue"
+    ],
     "setting": "kitchen",
     "objectId": "apple",
     "mode": "indoor",
-    "surpriseIds": ["apple_star_cut", "water_ripple", "table_transform"]
+    "surpriseIds": [
+      "apple_star_cut",
+      "water_ripple",
+      "table_transform"
+    ]
+  },
+  {
+    "id": "butterfly_colors",
+    "title": "The Butterfly Who Lost Its Colors",
+    "hook": "A little butterfly landed on Vee’s nose. Its colors are hiding somewhere in the garden… can you help find them?",
+    "paths": [
+      "Flower Bed",
+      "Leafy Corner",
+      "Sunny Spot"
+    ],
+    "setting": "garden",
+    "objectId": "butterfly",
+    "mode": "outdoor",
+    "surpriseIds": [
+      "butterfly_transform",
+      "wing_scales",
+      "butterfly_follow"
+    ]
+  },
+  {
+    "id": "forest_echo",
+    "title": "The Echo in the Woods",
+    "hook": "Somewhere between the tall trees, a friendly voice keeps calling back. Who is hiding in the forest?",
+    "paths": [
+      "Mossy Trail",
+      "Tall Trees",
+      "Leaf Tunnel"
+    ],
+    "setting": "forest",
+    "objectId": "bird",
+    "mode": "outdoor",
+    "surpriseIds": [
+      "bird_call",
+      "nest_reveal",
+      "feather_zoom"
+    ]
+  },
+  {
+    "id": "leaf_boat",
+    "title": "The Leaf That Led the Way",
+    "hook": "One brave leaf is floating along the little stream, and it seems to know exactly where it is going!",
+    "paths": [
+      "Pebble Path",
+      "Little Bridge",
+      "Flower Hill"
+    ],
+    "setting": "park",
+    "objectId": "leaf",
+    "mode": "outdoor",
+    "surpriseIds": [
+      "leaf_vein_map",
+      "tiny_trail",
+      "hidden_shape"
+    ]
+  },
+  {
+    "id": "library_whisper",
+    "title": "The Book That Whispered",
+    "hook": "Shh… one book on the shelf is whispering a secret. Vee needs a very quiet detective!",
+    "paths": [
+      "Story Corner",
+      "Tall Shelf",
+      "Reading Nook"
+    ],
+    "setting": "library",
+    "objectId": "book",
+    "mode": "indoor",
+    "surpriseIds": [
+      "secret_shelf",
+      "page_portal",
+      "story_star"
+    ]
+  },
+  {
+    "id": "table_party",
+    "title": "The Table That Wanted a Party",
+    "hook": "Every plate and cup on the table is wiggling. Something fun is about to happen!",
+    "paths": [
+      "Fruit Bowl",
+      "Cup Corner",
+      "Table Edge"
+    ],
+    "setting": "dining",
+    "objectId": "plate",
+    "mode": "indoor",
+    "surpriseIds": [
+      "plate_pattern",
+      "food_sort",
+      "table_transform"
+    ]
+  },
+  {
+    "id": "bubble_parade",
+    "title": "The Bubble Parade",
+    "hook": "Tiny bubbles are floating out of the sink in a long line. Where is the parade going?",
+    "paths": [
+      "Soap Dish",
+      "Mirror Wall",
+      "Towel Rack"
+    ],
+    "setting": "bathroom",
+    "objectId": "soap",
+    "mode": "indoor",
+    "surpriseIds": [
+      "soap_rainbow",
+      "bubble_swirl",
+      "tiny_bubble_world"
+    ]
   }
 ]

@@ -18,12 +18,9 @@ class SpeechBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     final bubble = Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(
-        horizontal: 18,
-        vertical: 14,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: VeeTokens.white.withOpacity(.97),
+        color: VeeTokens.white.withValues(alpha: .97),
         borderRadius: BorderRadius.circular(24),
         boxShadow: const [
           BoxShadow(
@@ -45,21 +42,21 @@ class SpeechBubble extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      fontSize: 12,
-                      letterSpacing: 1.0,
-                      color: VeeTokens.teal,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  fontSize: 12,
+                  letterSpacing: 1.0,
+                  color: VeeTokens.teal,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           Text(
             text,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  fontSize: 25,
-                  height: 1.08,
-                  fontWeight: FontWeight.w600,
-                ),
+              fontSize: 19,
+              height: 1.12,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),

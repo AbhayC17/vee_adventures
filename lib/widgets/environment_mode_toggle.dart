@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app/design_tokens.dart';
 import '../models/environment_mode.dart';
+import 'juicy_tap.dart';
 
 class EnvironmentModeToggle extends StatelessWidget {
   final EnvironmentMode value;
@@ -33,7 +34,7 @@ class EnvironmentModeToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: EnvironmentMode.values.map((mode) {
           final selected = mode == value;
-          return GestureDetector(
+          return JuicyTap(
             onTap: () => onChanged(mode),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
@@ -46,9 +47,12 @@ class EnvironmentModeToggle extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    mode.emoji,
-                    style: const TextStyle(fontSize: 20),
+                  Icon(
+                    mode == EnvironmentMode.indoor
+                        ? Icons.home_rounded
+                        : Icons.park_rounded,
+                    size: 22,
+                    color: selected ? VeeTokens.white : VeeTokens.teal,
                   ),
                   const SizedBox(width: 6),
                   Text(

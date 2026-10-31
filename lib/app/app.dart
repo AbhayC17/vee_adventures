@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'app_controller.dart';
+import 'brand.dart';
+import 'asset_preloader.dart';
 import 'game_app_scope.dart';
 import 'root_router.dart';
 import 'theme.dart';
@@ -36,10 +38,12 @@ class _VeesAdventuresAppState extends State<VeesAdventuresApp> {
     return GameAppScope(
       controller: controller,
       child: MaterialApp(
-        title: "Vee's Adventures",
+        title: AppBrand.name,
         debugShowCheckedModeBanner: false,
         theme: buildVeeTheme(),
-        home: const LandscapeOrientationGate(child: RootRouter()),
+        home: const LandscapeOrientationGate(
+          child: AssetPreloader(child: RootRouter()),
+        ),
       ),
     );
   }

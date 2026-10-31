@@ -60,14 +60,16 @@ class PlayEpisodeCatalog {
     for (var index = 0; index < decoded.length; index++) {
       final value = decoded[index];
       if (value is! Map) {
-        throw FormatException('PLAY episode at index $index must be an object.');
+        throw FormatException(
+          'PLAY episode at index $index must be an object.',
+        );
       }
       try {
-        episodes.add(
-          PlayEpisode.fromJson(Map<String, dynamic>.from(value)),
-        );
+        episodes.add(PlayEpisode.fromJson(Map<String, dynamic>.from(value)));
       } on FormatException catch (error) {
-        throw FormatException('Invalid PLAY episode at index $index: ${error.message}');
+        throw FormatException(
+          'Invalid PLAY episode at index $index: ${error.message}',
+        );
       }
     }
 
@@ -89,8 +91,37 @@ class PlayEpisodeCatalog {
     List<PlayEpisode> episodes,
     EnvironmentMode mode,
   ) => List<PlayEpisode>.unmodifiable(
-        episodes.where((episode) => episode.mode == mode),
-      );
+    episodes.where((episode) => episode.mode == mode),
+  );
+
+  static final List<String> _recent = <String>[];
+
+  /// Like [pickForMode] but avoids the episodes played most recently, so the
+  /// child does not meet the same story twice in a row. Once every episode has
+  /// been seen recently the full list is used again.
+  static Future<PlayEpisode> pickFresh(
+    EnvironmentMode mode, {
+    Random? random,
+    int remember = 3,
+  }) async {
+    final candidates = forMode(await loadAll(), mode);
+    if (candidates.isEmpty) {
+      throw StateError('No PLAY episodes are configured for ${mode.name}.');
+    }
+    final unseen = candidates
+        .where((episode) => !_recent.contains(episode.id))
+        .toList();
+    final pool = unseen.isEmpty ? candidates : unseen;
+    final rng = random ?? Random();
+    final pick = pool[rng.nextInt(pool.length)];
+    _recent
+      ..remove(pick.id)
+      ..add(pick.id);
+    while (_recent.length > remember) {
+      _recent.removeAt(0);
+    }
+    return pick;
+  }
 
   static Future<PlayEpisode> pickForMode(
     EnvironmentMode mode, {
@@ -126,10 +157,14 @@ class PlayEpisodeCatalog {
 
       final setting = ContentCatalog.settingsById[episode.setting];
       if (setting == null) {
-        issues.add('${episode.id} references unknown setting ${episode.setting}.');
+        issues.add(
+          '${episode.id} references unknown setting ${episode.setting}.',
+        );
       } else {
         if (setting.mode != episode.mode) {
-          issues.add('${episode.id} mode does not match setting ${setting.id}.');
+          issues.add(
+            '${episode.id} mode does not match setting ${setting.id}.',
+          );
         }
         if (!setting.itemIds.contains(episode.objectId)) {
           issues.add(
@@ -139,7 +174,9 @@ class PlayEpisodeCatalog {
       }
 
       if (ContentCatalog.get(episode.objectId) == null) {
-        issues.add('${episode.id} references unknown catalog item ${episode.objectId}.');
+        issues.add(
+          '${episode.id} references unknown catalog item ${episode.objectId}.',
+        );
       }
 
       for (final surpriseId in episode.surpriseIds) {
@@ -153,5 +190,8 @@ class PlayEpisodeCatalog {
   }
 
   /// Testing/development helper that allows a test to force a fresh asset read.
-  static void clearCache() => _cachedEpisodes = null;
+  static void clearCache() {
+    _cachedEpisodes = null;
+    _recent.clear();
+  }
 }

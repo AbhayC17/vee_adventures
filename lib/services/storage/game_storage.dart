@@ -25,9 +25,9 @@ class GameStorage {
       final decoded = jsonDecode(raw);
       if (decoded is! Map) return null;
       return Map<String, dynamic>.fromEntries(
-        decoded.entries.where((entry) => entry.key is String).map(
-              (entry) => MapEntry(entry.key as String, entry.value),
-            ),
+        decoded.entries
+            .where((entry) => entry.key is String)
+            .map((entry) => MapEntry(entry.key as String, entry.value)),
       );
     } on FormatException {
       return null;
@@ -53,7 +53,10 @@ class GameStorage {
 
     // Keep later writes possible after a failure; this caller still receives
     // the original future and can show a retry message.
-    _writeQueue = write.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    _writeQueue = write.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
     return write;
   }
 

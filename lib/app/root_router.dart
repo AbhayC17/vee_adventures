@@ -4,20 +4,22 @@ import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
 import 'game_app_scope.dart';
-import '../features/intro/intro_screen.dart';
+import '../features/onboarding/onboarding_screen.dart';
 import '../features/hub/adventure_hub.dart';
+import '../widgets/vee_avatar.dart';
+import '../widgets/vee_button.dart';
+import '../widgets/vee_loading.dart';
 
 class RootRouter extends StatelessWidget {
   const RootRouter({super.key});
-  @override Widget build(BuildContext context) {
+  @override
+  Widget build(BuildContext context) {
     final c = GameAppScope.of(context);
     return AnimatedBuilder(
       animation: c,
       builder: (context, _) {
         if (!c.ready) {
-          return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
-          );
+          return const VeeLoading();
         }
         if (c.startupError != null) {
           return Scaffold(
@@ -30,7 +32,11 @@ class RootRouter extends StatelessWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Text('💛', style: TextStyle(fontSize: 52)),
+                      const SizedBox(
+                        width: 130,
+                        height: 150,
+                        child: VeeAvatar(pose: VeePose.sleepy),
+                      ),
                       const SizedBox(height: 12),
                       const Text(
                         'Vee needs another try',
@@ -43,7 +49,7 @@ class RootRouter extends StatelessWidget {
                       const SizedBox(height: 8),
                       Text(c.startupError!, textAlign: TextAlign.center),
                       const SizedBox(height: 18),
-                      ElevatedButton(
+                      VeeButton(
                         onPressed: () => unawaited(c.retryInitialization()),
                         child: const Text('Try again'),
                       ),
@@ -55,9 +61,9 @@ class RootRouter extends StatelessWidget {
           );
         }
         if (c.profile.onboardingComplete) return const AdventureHub();
-        return const IntroScreen();
+        // First launch goes straight to the grown-up card.
+        return const OnboardingScreen();
       },
     );
   }
 }
-

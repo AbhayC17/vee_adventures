@@ -2,39 +2,79 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../app/design_tokens.dart';
 import '../../app/game_app_scope.dart';
 import '../../app/navigation.dart';
-import '../../app/design_tokens.dart';
 import '../../models/activity.dart';
 import '../../models/content_catalog.dart';
 import '../../models/environment_mode.dart';
+import '../../services/activity_selection/movement_profile.dart';
 import '../../services/ai/surprise_selector.dart';
 import '../../services/discovery_engine.dart';
-import '../../services/activity_selection/movement_profile.dart';
+import '../../services/explore/explore_board.dart';
+import '../../services/play/play_puzzles.dart';
+import '../../widgets/haptics.dart';
+import '../../widgets/hiding_spot.dart';
+import '../../widgets/item_icon.dart';
+import '../../widgets/juicy_tap.dart';
+import '../../widgets/puzzle_card.dart';
+import '../../widgets/scene_scaffold.dart';
+import '../../widgets/scene_ui.dart';
+import '../../widgets/vee_avatar.dart';
+import '../../widgets/vee_button.dart';
 import '../../widgets/world_shell.dart';
-import '../../widgets/game_options.dart';
-import '../rewards/reward_screen.dart';
 import '../hub/adventure_hub.dart';
+import '../rewards/reward_screen.dart';
 
+/// EXPLORE is a hide-and-seek adventure.
+///
+/// Pick a world, then peek behind hiding spots. Each one holds an item (with a
+/// fun fact and a sticker), a friendly critter, or, rarely, a golden find.
+/// Finding things fills the sparkle meter, and a full meter brings a surprise.
+/// Worlds can be "mastered" by finding everything in them, and every round
+/// favours things the child has not collected yet, so there is always one more
+/// thing to find. Nothing is ever lost or timed, and rounds end naturally.
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
-  @override State<ExploreScreen> createState() => _ExploreScreenState();
+  @override
+  State<ExploreScreen> createState() => _ExploreScreenState();
 }
 
-class _ExploreScreenState extends State<ExploreScreen> {
+enum _Phase { seek, sparkle, roundDone, puzzle, surprise, tease, secret }
+
+class _ExploreScreenState extends State<ExploreScreen>
+    with SingleTickerProviderStateMixin {
+  static const int _sparkleGoal = 5;
+
+  final Random random = Random();
+  late final AnimationController _idle = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2600),
+  );
+  bool _idleStarted = false;
+
   ExploreSetting? setting;
   bool showingSpecialEvents = false;
-  final Set<String> discovered = {};
-  final Set<String> reacted = {};
-  int phase = 0;
-  int chainStep = 0;
+
+  ExploreBoard? board;
+  Set<String> _recentItems = <String>{};
+  final Set<int> _newSpots = <int>{};
+  int _newThisRound = 0;
+  _Phase phase = _Phase.seek;
+  int round = 1;
+  int sparkles = 0;
   int interactionCount = 0;
+  int bonusStars = 0;
   bool challengeComplete = false;
   bool hiddenAreaOpen = false;
-  String? selectedItem;
-  String status = '';
+  bool worldMastered = false;
+  String speechText = '';
+  CatalogItem? _lastItem;
+  SurpriseEvent? _sparkleEvent;
   String? surprise;
-  final Random random = Random();
+  PlayPuzzle? _challenge;
+  VeePose _veePose = VeePose.happy;
+  int _veeBounce = 0;
   bool _finishStarted = false;
   final String _completionToken =
       'explore-${DateTime.now().microsecondsSinceEpoch}';
@@ -44,195 +84,225 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   int get _targetInteractions => _movementProfile.exploreInteractions;
   int get _discoveryGate => _movementProfile.exploreDiscoveryGate;
-
   EnvironmentMode get _mode => GameAppScope.of(context).profile.environmentMode;
+
+  /// Hiding spots per round: a calmer pace gets fewer.
+  int get _spotCount => switch (_movementProfile) {
+    MovementProfile.gentle => 4,
+    MovementProfile.steady => 6,
+    MovementProfile.energetic => 8,
+  };
+
+  bool get _canFinish =>
+      hiddenAreaOpen && interactionCount >= _targetInteractions;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_idleStarted) return;
+    _idleStarted = true;
+    if (!MediaQuery.disableAnimationsOf(context)) _idle.repeat();
+  }
+
+  @override
+  void dispose() {
+    _idle.dispose();
+    super.dispose();
+  }
+
+  // ── build ────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     if (setting == null) return _settings();
     return WorldShell(
-      left: Image.asset('assets/vee/vee_happy_idle.webp', fit: BoxFit.contain),
-      speech: _speech(),
-      eyebrow: 'EXPLORE • ${interactionCount}/$_targetInteractions',
+      left: VeeAvatar(pose: _veePose, bounce: _veeBounce),
+      speech: speechText.isEmpty ? null : speechText,
+      stepLabel: 'Explore',
+      stepCurrent: interactionCount.clamp(0, _targetInteractions - 1),
+      stepTotal: _targetInteractions,
       onRestartMission: () => replaceTo(context, const ExploreScreen()),
       onMainMenu: () => replaceTo(context, const AdventureHub()),
-      right: _world(),
+      right: _panel(),
     );
   }
 
+  // ── choosing a world ─────────────────────────────────────────────────────
+
   Widget _settings() {
+    final c = GameAppScope.of(context);
+    final collected = c.collectedItemIds;
     final worlds = showingSpecialEvents
         ? ContentCatalog.specialEventsForMode(_mode)
         : ContentCatalog.settingsForMode(_mode);
+    final mastered = worlds
+        .where((w) => WorldProgress.of(w, collected).mastered)
+        .length;
 
-    return Scaffold(
-      backgroundColor: VeeTokens.cream,
-      body: SafeArea(
-        child: Center(
-          child: FittedBox(
-            fit: BoxFit.contain,
-            child: SizedBox(
-              width: 920,
-              height: 690,
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GameOptionsButton(
-                      onRestart: () => replaceTo(context, const ExploreScreen()),
-                      onMainMenu: () => replaceTo(context, const AdventureHub()),
+    return SceneScaffold(
+      onBack: () => replaceTo(context, const AdventureHub()),
+      onRestartMission: () => replaceTo(context, const ExploreScreen()),
+      onMainMenu: () => replaceTo(context, const AdventureHub()),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: 920,
+            height: 560,
+            child: Column(
+              children: [
+                ScenePlaque(
+                  child: Text(
+                    showingSpecialEvents
+                        ? 'Special events'
+                        : 'Where do you want to explore?',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w900,
+                      color: VeeTokens.textOnLight,
                     ),
                   ),
-                  Column(
+                ),
+                const SizedBox(height: 8),
+                SceneCaption(
+                  mastered > 0
+                      ? 'Worlds mastered: $mastered of ${worlds.length}. Find everything to earn a star!'
+                      : 'Find everything in a world to master it.',
+                ),
+                const SizedBox(height: 14),
+                Expanded(
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    runAlignment: WrapAlignment.center,
+                    spacing: 14,
+                    runSpacing: 14,
                     children: [
-                      const SizedBox(height: 18),
-                      Text(
-                        showingSpecialEvents
-                            ? '${_mode.emoji} Special Events'
-                            : '${_mode.emoji} Where do you want to explore?',
-                        style: const TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.w900,
-                          color: VeeTokens.textOnLight,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        showingSpecialEvents
-                            ? (_mode == EnvironmentMode.indoor
-                                ? 'Step into a special indoor world.'
-                                : 'Step into a special outdoor world.')
-                            : (_mode == EnvironmentMode.indoor
-                                ? 'Choose a room or everyday indoor world.'
-                                : 'Choose an outdoor place and discover what is around you.'),
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
-                          color: VeeTokens.textSecondaryOnLight,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 14),
-                      Expanded(
-                        child: Wrap(
-                          alignment: WrapAlignment.center,
-                          runAlignment: WrapAlignment.center,
-                          spacing: 14,
-                          runSpacing: 12,
-                          children: worlds.map((s) {
-                            return GestureDetector(
-                              onTap: () => _selectSetting(s),
-                              child: Container(
-                                width: 200,
-                                height: showingSpecialEvents ? 126 : 132,
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: VeeTokens.white,
-                                  borderRadius: BorderRadius.circular(26),
-                                  boxShadow: const [
-                                    BoxShadow(
-                                      color: VeeTokens.shadow,
-                                      blurRadius: 14,
-                                      offset: Offset(0, 7),
-                                    ),
-                                  ],
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(s.emoji, style: const TextStyle(fontSize: 36)),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      s.name,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w900,
-                                        color: VeeTokens.textOnLight,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Text(
-                                      s.subtitle,
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600,
-                                        color: VeeTokens.textSecondaryOnLight,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      if (!showingSpecialEvents)
-                        GestureDetector(
-                          onTap: () => setState(() => showingSpecialEvents = true),
-                          child: Container(
-                            width: 500,
-                            height: 70,
-                            decoration: BoxDecoration(
-                              color: VeeTokens.yellow,
-                              borderRadius: BorderRadius.circular(25),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: VeeTokens.shadow,
-                                  blurRadius: 12,
-                                  offset: Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Text('✨', style: TextStyle(fontSize: 28)),
-                                const SizedBox(width: 10),
-                                Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      'SPECIAL EVENTS',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w900,
-                                        color: VeeTokens.textOnLight,
-                                      ),
-                                    ),
-                                    Text(
-                                      _mode == EnvironmentMode.indoor
-                                          ? 'Birthdays, holiday stays & cozy celebrations'
-                                          : 'Indian festivals, journeys & travel worlds',
-                                      style: const TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        color: VeeTokens.textSecondaryOnLight,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ),
-                        )
-                      else
-                        TextButton.icon(
-                          onPressed: () => setState(() => showingSpecialEvents = false),
-                          icon: const Icon(Icons.arrow_back_rounded),
-                          label: const Text('Back to regular worlds'),
-                          style: TextButton.styleFrom(
-                            foregroundColor: VeeTokens.teal,
-                            textStyle: const TextStyle(fontWeight: FontWeight.w900),
-                          ),
-                        ),
+                      for (final w in worlds)
+                        _worldCard(w, WorldProgress.of(w, collected)),
+                      _surpriseMeCard(worlds),
                     ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                VeeButton(
+                  outlined: true,
+                  icon: showingSpecialEvents
+                      ? Icons.arrow_back_rounded
+                      : Icons.celebration_rounded,
+                  fontSize: 19,
+                  minWidth: 300,
+                  onPressed: () => setState(
+                    () => showingSpecialEvents = !showingSpecialEvents,
+                  ),
+                  child: Text(
+                    showingSpecialEvents
+                        ? 'Back to regular worlds'
+                        : 'Special events',
+                  ),
+                ),
+                const SizedBox(height: 6),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _worldCard(ExploreSetting s, WorldProgress progress) {
+    return JuicyTap(
+      semanticLabel: '${s.name}. Found ${progress.found} of ${progress.total}.',
+      onTap: () => _selectSetting(s),
+      child: Container(
+        width: 205,
+        height: 168,
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 10),
+        decoration: BoxDecoration(
+          color: VeeTokens.cardWhite,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: progress.mastered ? VeeTokens.yellow : Colors.transparent,
+            width: 4,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: VeeTokens.shadow,
+              blurRadius: 14,
+              offset: Offset(0, 7),
+            ),
+          ],
+        ),
+        // Fixed-size card: if text is larger than expected (a bigger font, a
+        // long name) the contents shrink a little instead of overflowing.
+        child: Center(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: SizedBox(
+              width: 173,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(s.emoji, style: const TextStyle(fontSize: 34)),
+                      if (progress.mastered) ...[
+                        const SizedBox(width: 6),
+                        const Icon(
+                          Icons.workspace_premium_rounded,
+                          color: VeeTokens.orange,
+                          size: 30,
+                        ),
+                      ],
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    s.name,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                      color: VeeTokens.textOnLight,
+                    ),
+                  ),
+                  Text(
+                    s.subtitle,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      height: 1.15,
+                      fontWeight: FontWeight.w600,
+                      color: VeeTokens.textSecondaryOnLight,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: progress.fraction,
+                      minHeight: 10,
+                      backgroundColor: VeeTokens.creamDeep,
+                      color: progress.mastered
+                          ? VeeTokens.yellow
+                          : VeeTokens.teal,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    progress.mastered
+                        ? 'Mastered!'
+                        : '${progress.found} of ${progress.total} found',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: VeeTokens.textOnLight,
+                    ),
                   ),
                 ],
               ),
@@ -243,174 +313,459 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  void _selectSetting(ExploreSetting selected) {
-    setState(() {
-      setting = selected;
-      showingSpecialEvents = false;
-      interactionCount = 0;
-      chainStep = 0;
-      discovered.clear();
-      reacted.clear();
-      challengeComplete = false;
-      hiddenAreaOpen = false;
-      status = '';
-      surprise = null;
-    });
-  }
-
-  String _speech() {
-    if (hiddenAreaOpen) return 'You changed the world enough to reveal a secret place!';
-    if (challengeComplete) return 'The setting reacted to your choices. What else can we discover?';
-    if (chainStep > 0) return 'Follow the clue your last discovery created…';
-    return 'You choose what to touch. I wonder what will happen!';
-  }
-
-  Widget _world() {
-    final allItems = ContentCatalog.forSetting(setting!.id);
-    final itemLimit = switch (_movementProfile) {
-      MovementProfile.gentle => 4,
-      MovementProfile.steady => 6,
-      MovementProfile.energetic => 8,
-    };
-    final items = allItems.take(itemLimit).toList();
-    return Column(mainAxisSize: MainAxisSize.min, children: [
-        Row(children: [
-          Expanded(child: Text('${setting!.emoji} ${setting!.name}', style: Theme.of(context).textTheme.headlineMedium)),
-          TextButton(
-            onPressed: () => setState(() {
-              setting = null;
-              discovered.clear();
-              reacted.clear();
-              challengeComplete = false;
-              hiddenAreaOpen = false;
-              chainStep = 0;
-              interactionCount = 0;
-              status = '';
-              surprise = null;
-            }),
-            child: const Text('Choose another place'),
-          ),
-        ]),
-        const SizedBox(height: 6),
-        Text('Touch something. Every discovery can lead somewhere new.', style: Theme.of(context).textTheme.bodyLarge,
-          textAlign: TextAlign.center),
-        const SizedBox(height: 12),
-        Wrap(alignment: WrapAlignment.center, spacing: 12, runSpacing: 12, children: items.map(_itemCard).toList()),
-        const SizedBox(height: 18),
-        if (discovered.length >= _discoveryGate && !challengeComplete) _dragChallenge(),
-        if (challengeComplete && !hiddenAreaOpen) _hiddenReveal(),
-        if (surprise != null) Padding(padding: const EdgeInsets.only(top: 10), child: Text('✨ ${surprise!.replaceAll('_', ' ')}',
-          style: const TextStyle(fontWeight: FontWeight.w900, color: VeeTokens.teal))),
-        if (hiddenAreaOpen) _secretArea(),
-        if (status.isNotEmpty) Padding(padding: const EdgeInsets.only(top: 12), child: Text(status, textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(color: VeeTokens.textOnLight))),
-        const SizedBox(height: 16),
-        if (interactionCount >= _targetInteractions && hiddenAreaOpen) _finishButton(),
-    ]);
-  }
-
-  Widget _itemCard(CatalogItem item) {
-    final isDiscovered = discovered.contains(item.id);
-    final active = selectedItem == item.id;
-    return GestureDetector(
-      onTap: () => _discover(item),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        width: 145, height: 112,
+  /// A mystery card that jumps into a random world.
+  Widget _surpriseMeCard(List<ExploreSetting> worlds) {
+    return JuicyTap(
+      semanticLabel: 'Surprise me with a random world',
+      onTap: () {
+        if (worlds.isEmpty) return;
+        _selectSetting(worlds[random.nextInt(worlds.length)]);
+      },
+      child: Container(
+        width: 205,
+        height: 168,
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(color: active ? VeeTokens.yellow : VeeTokens.white, borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: isDiscovered ? VeeTokens.teal : Colors.transparent, width: 2), boxShadow: const [BoxShadow(color: VeeTokens.shadow,
-          blurRadius: 10, offset: Offset(0, 5))]),
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Text(item.emoji, style: const TextStyle(fontSize: 34)),
-          const SizedBox(height: 4),
-          Text(item.name, style: const TextStyle(fontWeight: FontWeight.w900, color: VeeTokens.textOnLight)),
-          if (isDiscovered) const Text('discovered ✦', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: VeeTokens.teal)),
-        ]),
+        decoration: BoxDecoration(
+          color: VeeTokens.teal,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: const [
+            BoxShadow(
+              color: VeeTokens.shadow,
+              blurRadius: 14,
+              offset: Offset(0, 7),
+            ),
+          ],
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.auto_awesome_rounded, size: 48, color: VeeTokens.yellow),
+            SizedBox(height: 6),
+            Text(
+              'Surprise me!',
+              style: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w900,
+                color: VeeTokens.textOnDark,
+              ),
+            ),
+            Text(
+              'A mystery world',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: VeeTokens.textOnDark,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  void _discover(CatalogItem item) {
-    final c = GameAppScope.of(context);
-    final wasNew = discovered.add(item.id);
-    interactionCount++;
-    selectedItem = item.id;
-    final pack = DiscoveryEngine.forItem(item);
-    final wow = pack.wowDiscoveries[(interactionCount - 1) % pack.wowDiscoveries.length];
-    final reaction = item.interactions.isEmpty ? 'glow' : item.interactions[random.nextInt(item.interactions.length)];
-    reacted.add(item.id);
-    chainStep++;
-    if (wasNew) c.addDiscovery('item-${item.id}');
+  void _selectSetting(ExploreSetting selected) {
     setState(() {
-      status = '${item.emoji} ${item.name}\n\n$wow';
-      if (chainStep == 2) status = '$status\n\n✨ Something connected to your last discovery…';
+      setting = selected;
+      showingSpecialEvents = false;
+      round = 1;
+      sparkles = 0;
+      interactionCount = 0;
+      bonusStars = 0;
+      challengeComplete = false;
+      hiddenAreaOpen = false;
+      worldMastered = false;
+      surprise = null;
+      _sparkleEvent = null;
+      _challenge = null;
+      _lastItem = null;
+      _recentItems = <String>{};
+      _veePose = VeePose.happy;
+      _newBoard();
+      speechText = 'Tap a hiding spot to peek! What could be inside?';
     });
-    if (chainStep >= 2 && reaction == 'follow') {
-      final event = DiscoveryEngine.randomEvent(pack.surpriseIds, mode: _mode);
-      setState(() => status = '$status\n\n${event.emoji} ${event.message}');
-      c.addDiscovery('explore-surprise-${item.id}-${event.id}');
-    }
-    if (interactionCount >= 6 && !challengeComplete) {
-      // The challenge becomes available after enough free exploration.
-    }
-    c.save();
   }
 
-  Widget _dragChallenge() {
-    final allItems = ContentCatalog.forSetting(setting!.id);
-    final filtered = allItems.where((e) => e.category == 'plant' || e.category == 'food').toList();
-    final items = (filtered.isNotEmpty ? filtered : allItems).take(3).toList();
-    if (items.isEmpty) return const SizedBox.shrink();
-    final target = items.first;
+  void _leaveWorld() {
+    setState(() {
+      setting = null;
+      board = null;
+      speechText = '';
+      _veePose = VeePose.happy;
+    });
+  }
+
+  void _newBoard() {
+    final c = GameAppScope.of(context);
+    final fresh = ExploreBoard.generate(
+      setting: setting!,
+      collected: c.collectedItemIds,
+      random: random,
+      spotCount: _spotCount,
+      recent: _recentItems,
+    );
+    board = fresh;
+    _recentItems = fresh.itemIds;
+    _newSpots.clear();
+    _newThisRound = 0;
+    phase = _Phase.seek;
+  }
+
+  void _nextRound() {
+    setState(() {
+      round++;
+      _newBoard();
+      _veePose = VeePose.happy;
+      _veeBounce++;
+      speechText = 'Round $round! Peek behind the hiding spots.';
+    });
+  }
+
+  // ── the game panel ───────────────────────────────────────────────────────
+
+  Widget _panel() {
+    final c = GameAppScope.of(context);
+    final stickers = c.collectedItemIds.length;
     return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: VeeTokens.white, borderRadius: BorderRadius.circular(28), boxShadow: const [BoxShadow(color: VeeTokens.shadow,
-        blurRadius: 12, offset: Offset(0, 6))]),
-      child: Column(children: [
-        const Text('✨ Something needs your help!', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900,
-          color: VeeTokens.textOnLight)),
-        const SizedBox(height: 6),
-        Text('Drag the right discovery to ${target.name}.', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w700,
-          color: VeeTokens.textSecondaryOnLight)),
-        const SizedBox(height: 14),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          ...items.map((item) => Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Draggable<String>(
-            data: item.id,
-            feedback: Material(color: Colors.transparent, child: Text(item.emoji, style: const TextStyle(fontSize: 52))),
-            childWhenDragging: Opacity(opacity: .25, child: Text(item.emoji, style: const TextStyle(fontSize: 42))),
-            child: Text(item.emoji, style: const TextStyle(fontSize: 42)),
-          ))),
-          const SizedBox(width: 18),
-          DragTarget<String>(
-            onAcceptWithDetails: (details) {
-              if (details.data == target.id) {
-                setState(() { challengeComplete = true; status = 'Perfect! The world changed because you helped.'; });
-                _chooseSurprise();
-              } else {
-                setState(() => status = 'That one belongs somewhere else. Try another discovery.');
-              }
-            },
-            builder: (_, __, ___) => Container(
-              width: 92,
-              height: 76,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: VeeTokens.leaf.withOpacity(.25),
-                borderRadius: BorderRadius.circular(22),
-              ),
-              child: Text(
-                '${target.emoji}\n${target.name}',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: VeeTokens.textOnLight,
+      padding: const EdgeInsets.fromLTRB(20, 14, 20, 18),
+      decoration: BoxDecoration(
+        color: VeeTokens.cardWhite.withValues(alpha: .95),
+        borderRadius: BorderRadius.circular(40),
+        boxShadow: const [
+          BoxShadow(
+            color: VeeTokens.shadow,
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${setting!.emoji} ${setting!.name}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 27,
+                    fontWeight: FontWeight.w900,
+                    color: VeeTokens.textOnLight,
+                  ),
                 ),
               ),
+              TextButton(
+                onPressed: _leaveWorld,
+                child: const Text(
+                  'Choose another place',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: VeeTokens.teal,
+                    decoration: TextDecoration.underline,
+                    decorationColor: VeeTokens.teal,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Row(
+            children: [
+              _SparkleMeter(count: sparkles, goal: _sparkleGoal),
+              const Spacer(),
+              _StickerChip(have: stickers, total: ContentCatalog.items.length),
+            ],
+          ),
+          const SizedBox(height: 14),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 280),
+            child: KeyedSubtree(
+              key: ValueKey<String>('$phase-$round'),
+              child: _phaseBody(),
             ),
           ),
-        ]),
-      ]),
+        ],
+      ),
+    );
+  }
+
+  Widget _phaseBody() => switch (phase) {
+    _Phase.seek => _board(),
+    _Phase.sparkle => _sparkleCard(),
+    _Phase.roundDone => _roundDoneCard(),
+    _Phase.puzzle => _puzzleCard(),
+    _Phase.surprise => _surpriseCard(),
+    _Phase.tease => _teaseCard(),
+    _Phase.secret => _secretCard(),
+  };
+
+  // ── seeking ──────────────────────────────────────────────────────────────
+
+  HideStyle _styleFor(int index) {
+    const outdoor = [HideStyle.bush, HideStyle.rock, HideStyle.log];
+    const indoor = [HideStyle.basket, HideStyle.box, HideStyle.cushion];
+    final list = _mode == EnvironmentMode.indoor ? indoor : outdoor;
+    return list[(index * 7 + round) % list.length];
+  }
+
+  Widget _board() {
+    final b = board!;
+    final columns = b.spots.length == 6 ? 3 : 4;
+    final width = columns * HidingSpotView.width + (columns - 1) * 12 + 4.0;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Round $round  •  Found ${b.openedItemCount} of ${b.itemSpotCount}',
+          style: const TextStyle(
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
+            color: VeeTokens.textSecondaryOnLight,
+          ),
+        ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: width,
+          child: Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              for (final spot in b.spots)
+                HidingSpotView(
+                  key: ValueKey<String>('spot-$round-${spot.index}'),
+                  spot: spot,
+                  opened: b.isOpen(spot.index),
+                  isNew: _newSpots.contains(spot.index),
+                  style: _styleFor(spot.index),
+                  idle: _idle,
+                  onTap: () => _open(spot.index),
+                ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _open(int index) {
+    final b = board;
+    if (b == null || phase != _Phase.seek) return;
+    final spot = b.open(index);
+    if (spot == null) return;
+    final c = GameAppScope.of(context);
+
+    if (spot.kind == SpotKind.critter) {
+      setState(() {
+        speechText = spot.critter!.line;
+        _veePose = VeePose.happy;
+        _veeBounce++;
+      });
+      return;
+    }
+
+    final item = spot.item!;
+    final golden = spot.kind == SpotKind.golden;
+    final isNew = !c.collectedItemIds.contains(item.id);
+    c.addDiscovery('item-${item.id}');
+    _recordFind(item);
+
+    final pack = DiscoveryEngine.forItem(item);
+    final wow = pack
+        .wowDiscoveries[(interactionCount - 1) % pack.wowDiscoveries.length];
+    var message = golden
+        ? 'A GOLDEN find! ${item.name}! $wow'
+        : isNew
+        ? 'A new sticker: ${item.name}! $wow'
+        : '${item.name}! $wow';
+
+    // Finding everything in a world earns a one-time badge and a bonus star.
+    final progress = WorldProgress.of(setting!, c.collectedItemIds);
+    final badge = 'world-${setting!.id}';
+    if (progress.mastered && !c.discoveries.contains(badge)) {
+      worldMastered = true;
+      c.addDiscovery(badge);
+      message = 'You found EVERYTHING in ${setting!.name}! You mastered it!';
+    }
+
+    c.scheduleSave();
+    Haptics.medium();
+    setState(() {
+      if (isNew) {
+        _newSpots.add(index);
+        _newThisRound++;
+      }
+      if (golden) bonusStars = min(2, bonusStars + 1);
+      sparkles = min(_sparkleGoal, sparkles + (golden ? 2 : 1));
+      speechText = message;
+      _veePose = golden ? VeePose.surprised : VeePose.celebration;
+      _veeBounce++;
+    });
+
+    if (sparkles >= _sparkleGoal) {
+      _later(_startSparkle);
+    } else if (b.roundComplete) {
+      _later(_endRound);
+    }
+  }
+
+  void _recordFind(CatalogItem item) {
+    interactionCount++;
+    _lastItem = item;
+  }
+
+  /// Waits a moment so the child can enjoy the reveal before the screen changes.
+  void _later(VoidCallback action) {
+    Future<void>.delayed(const Duration(milliseconds: 1100), () {
+      if (mounted) action();
+    });
+  }
+
+  void _startSparkle() {
+    if (phase != _Phase.seek) return;
+    final item = _lastItem ?? ContentCatalog.items.first;
+    setState(() {
+      _sparkleEvent = DiscoveryEngine.randomEvent(
+        DiscoveryEngine.forItem(item).surpriseIds,
+        mode: _mode,
+      );
+      phase = _Phase.sparkle;
+      _veePose = VeePose.surprised;
+      _veeBounce++;
+      speechText = 'The sparkle meter is full!';
+    });
+  }
+
+  void _endRound() {
+    if (phase != _Phase.seek || !(board?.roundComplete ?? false)) return;
+    setState(() {
+      if (!challengeComplete && interactionCount >= _discoveryGate) {
+        phase = _Phase.puzzle;
+        _veePose = VeePose.thinking;
+        speechText = 'Something needs your help!';
+      } else {
+        phase = _Phase.roundDone;
+        _veePose = VeePose.celebration;
+        speechText = 'Round $round complete!';
+      }
+    });
+  }
+
+  // ── cards that replace the board ─────────────────────────────────────────
+
+  Widget _sparkleCard() {
+    final event = _sparkleEvent!;
+    return _card(
+      children: [
+        Text(event.emoji, style: const TextStyle(fontSize: 60)),
+        const SizedBox(height: 4),
+        const PillTag.coral('Sparkle surprise!'),
+        const SizedBox(height: 10),
+        Text(event.title, textAlign: TextAlign.center, style: _headingStyle),
+        const SizedBox(height: 6),
+        Text(event.message, textAlign: TextAlign.center, style: _bodyStyle),
+        const SizedBox(height: 16),
+        VeeButton(
+          icon: Icons.celebration_rounded,
+          onPressed: () {
+            final c = GameAppScope.of(context);
+            final item = _lastItem;
+            if (item != null) {
+              c.addDiscovery('explore-surprise-${item.id}-${event.id}');
+              c.scheduleSave();
+            }
+            setState(() {
+              sparkles = 0;
+              _sparkleEvent = null;
+              phase = _Phase.seek;
+              _veePose = VeePose.happy;
+            });
+            if (board?.roundComplete ?? false) _later(_endRound);
+          },
+          child: const Text('Yay!'),
+        ),
+      ],
+    );
+  }
+
+  Widget _roundDoneCard() {
+    final tired = round >= 4;
+    return _card(
+      children: [
+        const PillTag.coral('Round complete!'),
+        const SizedBox(height: 10),
+        Text(
+          worldMastered
+              ? 'You mastered ${setting!.name}!'
+              : _newThisRound > 0
+              ? 'You found $_newThisRound new sticker${_newThisRound == 1 ? '' : 's'}!'
+              : 'Great exploring!',
+          textAlign: TextAlign.center,
+          style: _headingStyle,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          tired
+              ? 'You have explored a lot. A stretch or a sip of water might feel nice!'
+              : 'There is always more hiding. Ready for another round?',
+          textAlign: TextAlign.center,
+          style: _bodyStyle,
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 10,
+          children: [
+            VeeButton(
+              outlined: _canFinish && tired,
+              icon: Icons.arrow_forward_rounded,
+              onPressed: _nextRound,
+              child: const Text('Next round'),
+            ),
+            if (_canFinish)
+              VeeButton(
+                outlined: !tired,
+                icon: Icons.star_rounded,
+                onPressed: _finish,
+                child: const Text('Finish and collect stars'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _puzzleCard() {
+    final puzzle = _challenge ??= PlayPuzzleBuilder.choose(
+      pool: PlayPuzzleBuilder.poolForSetting(setting!.id, _mode),
+      mode: _mode,
+      random: random,
+      age: GameAppScope.of(context).profile.age,
+    );
+    return _card(
+      children: [
+        const PillTag.coral('Something needs your help!'),
+        const SizedBox(height: 10),
+        PuzzleCard(
+          key: ValueKey('explore-${puzzle.kind.name}'),
+          puzzle: puzzle,
+          onAttempt: (correct) => setState(() {
+            _veePose = correct ? VeePose.celebration : VeePose.encourage;
+            _veeBounce++;
+          }),
+          onSolved: () {
+            if (!mounted) return;
+            setState(() {
+              challengeComplete = true;
+              speechText = 'Perfect! The world changed because you helped.';
+            });
+            _chooseSurprise();
+          },
+        ),
+      ],
     );
   }
 
@@ -419,49 +774,181 @@ class _ExploreScreenState extends State<ExploreScreen> {
     final items = ContentCatalog.forSetting(setting?.id ?? '');
     final source = items.isEmpty ? ContentCatalog.items.first : items.first;
     final pack = DiscoveryEngine.forItem(source);
-    final allowed = pack.surpriseIds.map((id) {
-      final event = DiscoveryEngine.event(id, mode: _mode);
-      return SurpriseChoice(event.id, '${event.emoji} ${event.message}');
-    }).toList(growable: false);
+    final allowed = pack.surpriseIds
+        .map((id) {
+          final event = DiscoveryEngine.event(id, mode: _mode);
+          return SurpriseChoice(event.id, '${event.emoji} ${event.message}');
+        })
+        .toList(growable: false);
     final choice = await c.surpriseSelector.choose(
       allowed: allowed,
       context: setting?.name ?? 'explore',
     );
     if (!mounted) return;
-    final event = DiscoveryEngine.event(choice.id, mode: _mode);
     setState(() {
+      _veePose = VeePose.surprised;
+      _veeBounce++;
       surprise = choice.id;
-      status = '${event.emoji} ${event.message} Tap the glowing discovery to continue.';
+      phase = _Phase.surprise;
     });
   }
 
-  Widget _hiddenReveal() => GestureDetector(
-    onTap: () => setState(() { hiddenAreaOpen = true; status = 'A hidden area opened! There is one more little world to discover.'; }),
-    child: Container(margin: const EdgeInsets.only(top: 14), padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: VeeTokens.yellow,
-    borderRadius: BorderRadius.circular(28)), child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [Text('🌿',
-    style: TextStyle(fontSize: 34)), SizedBox(width: 10), Text('Something is moving behind here…', style: TextStyle(fontWeight: FontWeight.w900,
-      color: VeeTokens.textOnLight))])),
-  );
-
-  Widget _secretArea() {
-    final item = ContentCatalog.forSetting(setting!.id).last;
-    return Container(margin: const EdgeInsets.only(top: 14), padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: VeeTokens.cream,
-      borderRadius: BorderRadius.circular(28)), child: Column(children: [
-      Text(setting!.hiddenAreas.first, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: VeeTokens.teal)),
-      const SizedBox(height: 6),
-      Text('✨ Secret discovery', style: Theme.of(context).textTheme.headlineSmall),
-      const SizedBox(height: 6),
-      Text('${item.emoji} ${item.name} was waiting here!', style: Theme.of(context).textTheme.titleMedium),
-      const SizedBox(height: 10),
-      Text(DiscoveryEngine.forItem(item).wowDiscoveries.last, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodyLarge),
-    ]));
+  Widget _surpriseCard() {
+    final event = DiscoveryEngine.event(surprise!, mode: _mode);
+    return _card(
+      children: [
+        Text(event.emoji, style: const TextStyle(fontSize: 60)),
+        const SizedBox(height: 4),
+        const PillTag.coral('A surprise!'),
+        const SizedBox(height: 10),
+        Text(event.title, textAlign: TextAlign.center, style: _headingStyle),
+        const SizedBox(height: 6),
+        Text(event.message, textAlign: TextAlign.center, style: _bodyStyle),
+        const SizedBox(height: 16),
+        VeeButton(
+          icon: Icons.arrow_forward_rounded,
+          onPressed: () => setState(() {
+            phase = hiddenAreaOpen ? _Phase.roundDone : _Phase.tease;
+            speechText = 'Wait… something is moving over there!';
+          }),
+          child: const Text('Continue'),
+        ),
+      ],
+    );
   }
 
-  Widget _finishButton() => GestureDetector(onTap: _finish, child: Container(margin: const EdgeInsets.only(top: 16),
-  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16), decoration: BoxDecoration(color: VeeTokens.yellow,
-  borderRadius: BorderRadius.circular(24), boxShadow: const [BoxShadow(color: VeeTokens.shadow, blurRadius: 12,
-  offset: Offset(0, 6))]), child: const Text('✨ Finish this discovery', style: TextStyle(fontWeight: FontWeight.w900,
-  color: VeeTokens.textOnLight))));
+  String get _hiddenLabel => (setting?.hiddenAreas.isNotEmpty ?? false)
+      ? setting!.hiddenAreas.first
+      : 'A secret place';
+
+  Widget _teaseCard() {
+    return JuicyTap(
+      semanticLabel: 'Something is moving. Tap to look.',
+      onTap: () {
+        final c = GameAppScope.of(context);
+        final item = _secretItem();
+        c.addDiscovery('item-${item.id}');
+        c.scheduleSave();
+        Haptics.medium();
+        setState(() {
+          hiddenAreaOpen = true;
+          phase = _Phase.secret;
+          _veePose = VeePose.surprised;
+          _veeBounce++;
+          speechText =
+              'A hidden place opened! There is one more thing to find.';
+        });
+      },
+      child: _card(
+        color: VeeTokens.yellow,
+        children: [
+          const Icon(Icons.spa_rounded, size: 54, color: VeeTokens.textOnLight),
+          const SizedBox(height: 6),
+          const Text(
+            'Something is moving behind here…',
+            textAlign: TextAlign.center,
+            style: _headingStyle,
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Tap to look!',
+            style: TextStyle(
+              fontSize: 19,
+              fontWeight: FontWeight.w800,
+              color: VeeTokens.textOnLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  CatalogItem _secretItem() {
+    final items = ContentCatalog.forSetting(setting!.id);
+    return items.isEmpty ? ContentCatalog.items.first : items.last;
+  }
+
+  Widget _secretCard() {
+    final item = _secretItem();
+    final c = GameAppScope.of(context);
+    return _card(
+      children: [
+        Text(
+          _hiddenLabel,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+            color: VeeTokens.teal,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const PillTag.coral('Secret discovery!'),
+        const SizedBox(height: 8),
+        ItemIcon(item, size: 84),
+        Text(
+          '${item.name} was waiting here!',
+          textAlign: TextAlign.center,
+          style: _headingStyle,
+        ),
+        const SizedBox(height: 6),
+        Text(
+          DiscoveryEngine.forItem(item).wowDiscoveries.last,
+          textAlign: TextAlign.center,
+          style: _bodyStyle,
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 12,
+          runSpacing: 10,
+          children: [
+            VeeButton(
+              icon: Icons.arrow_forward_rounded,
+              onPressed: () {
+                c.scheduleSave();
+                _nextRound();
+              },
+              child: const Text('Keep exploring'),
+            ),
+            if (_canFinish)
+              VeeButton(
+                outlined: true,
+                icon: Icons.star_rounded,
+                onPressed: _finish,
+                child: const Text('Finish and collect stars'),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  static const TextStyle _headingStyle = TextStyle(
+    fontSize: 30,
+    height: 1.08,
+    fontWeight: FontWeight.w900,
+    color: VeeTokens.textOnLight,
+  );
+
+  static const TextStyle _bodyStyle = TextStyle(
+    fontSize: 20,
+    height: 1.2,
+    fontWeight: FontWeight.w700,
+    color: VeeTokens.textSecondaryOnLight,
+  );
+
+  Widget _card({required List<Widget> children, Color? color}) => Container(
+    width: 520,
+    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 18),
+    decoration: BoxDecoration(
+      color: color ?? VeeTokens.mint.withValues(alpha: .55),
+      borderRadius: BorderRadius.circular(30),
+    ),
+    child: Column(mainAxisSize: MainAxisSize.min, children: children),
+  );
+
+  // ── finishing ────────────────────────────────────────────────────────────
 
   Future<void> _finish() async {
     if (_finishStarted) return;
@@ -478,15 +965,20 @@ class _ExploreScreenState extends State<ExploreScreen> {
       await c.finishActivity(
         activityId: 'explore-${selectedSetting.id}',
         completionToken: _completionToken,
-        starsEarned: 4,
-        discoveryIds: <String>['explore-${selectedSetting.id}'],
+        starsEarned: 4 + bonusStars + (worldMastered ? 1 : 0),
+        discoveryIds: <String>[
+          'explore-${selectedSetting.id}',
+          if (worldMastered) 'world-${selectedSetting.id}',
+        ],
       );
       if (!mounted) return;
       replaceTo(
         context,
         RewardScreen(
           activity: ActivityType.explore,
-          discovery: 'You explored ${selectedSetting.name} and changed the world.',
+          discovery: worldMastered
+              ? 'You found everything in ${selectedSetting.name}!'
+              : 'You explored ${selectedSetting.name} and changed the world.',
         ),
       );
     } catch (error, stackTrace) {
@@ -494,9 +986,90 @@ class _ExploreScreenState extends State<ExploreScreen> {
       if (!mounted) return;
       setState(() {
         _finishStarted = false;
-        status = 'Vee could not save that star. Please try again.';
+        speechText = 'Vee could not save that star. Please try again.';
       });
     }
   }
+}
 
+/// Five little sparkles that fill up as items are found.
+class _SparkleMeter extends StatelessWidget {
+  final int count;
+  final int goal;
+
+  const _SparkleMeter({required this.count, required this.goal});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: 'Sparkle meter: $count of $goal',
+      child: ExcludeSemantics(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Sparkles',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                color: VeeTokens.textOnLight,
+              ),
+            ),
+            const SizedBox(width: 8),
+            for (var i = 0; i < goal; i++)
+              AnimatedScale(
+                scale: i < count ? 1.15 : 1.0,
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutBack,
+                child: Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 30,
+                  color: i < count ? VeeTokens.yellow : VeeTokens.creamDeep,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StickerChip extends StatelessWidget {
+  final int have;
+  final int total;
+
+  const _StickerChip({required this.have, required this.total});
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'Stickers collected: $have of $total',
+    child: ExcludeSemantics(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: VeeTokens.mint,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.auto_awesome_mosaic_rounded,
+              size: 20,
+              color: VeeTokens.teal,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Stickers $have/$total',
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                color: VeeTokens.textOnLight,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 }

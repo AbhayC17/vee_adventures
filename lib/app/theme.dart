@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'design_tokens.dart';
 
-/// Global visual system for Vee's Adventures.
+/// Global visual system for Movement Missions.
 ///
 /// Fredoka is bundled inside the Flutter application, so the
 /// game uses the same typography on Windows, Chrome, Android,
@@ -119,20 +120,21 @@ ThemeData buildVeeTheme() {
     ),
   );
 
-  final colorScheme = ColorScheme.fromSeed(
-    seedColor: VeeTokens.teal,
-    brightness: Brightness.light,
-    surface: VeeTokens.cream,
-  ).copyWith(
-    primary: VeeTokens.teal,
-    onPrimary: VeeTokens.textOnAccent,
-    secondary: VeeTokens.yellow,
-    onSecondary: VeeTokens.textOnWarmButton,
-    surface: VeeTokens.cream,
-    onSurface: VeeTokens.textOnLight,
-    error: const Color(0xFF9B2C2C),
-    onError: VeeTokens.textOnDark,
-  );
+  final colorScheme =
+      ColorScheme.fromSeed(
+        seedColor: VeeTokens.teal,
+        brightness: Brightness.light,
+        surface: VeeTokens.cream,
+      ).copyWith(
+        primary: VeeTokens.teal,
+        onPrimary: VeeTokens.textOnAccent,
+        secondary: VeeTokens.yellow,
+        onSecondary: VeeTokens.textOnWarmButton,
+        surface: VeeTokens.cream,
+        onSurface: VeeTokens.textOnLight,
+        error: const Color(0xFF9B2C2C),
+        onError: VeeTokens.textOnDark,
+      );
 
   return ThemeData(
     useMaterial3: true,
@@ -143,6 +145,9 @@ ThemeData buildVeeTheme() {
 
     // THIS makes Fredoka the default application font.
     fontFamily: family,
+    // Optional: if assets/fonts/NotoColorEmoji.ttf is bundled (see
+    // docs/PUBLISHING.md) emoji use it instead of downloading a font on web.
+    fontFamilyFallback: const <String>['NotoColorEmoji'],
 
     textTheme: textTheme,
     primaryTextTheme: textTheme,
@@ -192,10 +197,7 @@ ThemeData buildVeeTheme() {
 
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(22),
-        borderSide: const BorderSide(
-          color: VeeTokens.teal,
-          width: 2.5,
-        ),
+        borderSide: const BorderSide(color: VeeTokens.teal, width: 2.5),
       ),
 
       errorBorder: OutlineInputBorder(
@@ -205,33 +207,22 @@ ThemeData buildVeeTheme() {
 
       focusedErrorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(22),
-        borderSide: const BorderSide(
-          color: VeeTokens.orange,
-          width: 2.5,
-        ),
+        borderSide: const BorderSide(color: VeeTokens.orange, width: 2.5),
       ),
 
-      contentPadding: const EdgeInsets.symmetric(
-        horizontal: 22,
-        vertical: 20,
-      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
     ),
 
     elevatedButtonTheme: ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(0, 58),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 26,
-          vertical: 15,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 15),
         textStyle: const TextStyle(
           fontFamily: family,
           fontSize: 19,
           fontWeight: FontWeight.w700,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
     ),
 
@@ -244,9 +235,7 @@ ThemeData buildVeeTheme() {
           fontSize: 18,
           fontWeight: FontWeight.w600,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
     ),
 
@@ -265,13 +254,8 @@ ThemeData buildVeeTheme() {
         fontWeight: FontWeight.w600,
         color: VeeTokens.textOnLight,
       ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: 14,
-        vertical: 9,
-      ),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
     ),
   );
 }

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -56,7 +55,8 @@ void main() {
 
     test('episode JSON round-trip preserves all fields', () async {
       final original = (await PlayEpisodeCatalog.loadAll()).first;
-      final json = jsonDecode(jsonEncode(original.toJson())) as Map<String, dynamic>;
+      final json =
+          jsonDecode(jsonEncode(original.toJson())) as Map<String, dynamic>;
       final restored = PlayEpisode.fromJson(json);
 
       expect(restored.id, original.id);
@@ -89,11 +89,13 @@ void main() {
       final missingAssetBundle = _MissingEpisodeBundle();
       await expectLater(
         PlayEpisodeCatalog.loadAll(bundle: missingAssetBundle),
-        throwsA(isA<FormatException>().having(
-          (error) => error.message,
-          'message',
-          contains(PlayEpisodeCatalog.assetPath),
-        )),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            contains(PlayEpisodeCatalog.assetPath),
+          ),
+        ),
       );
     });
   });

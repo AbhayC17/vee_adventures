@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../services/storage/game_storage.dart';
@@ -8,6 +10,7 @@ import '../services/ai/ai_provider.dart';
 import '../services/safety/safety_validator.dart';
 import '../services/assets/asset_registry.dart';
 import '../services/spot/discovery_analyzer.dart';
+import '../services/spot/open_discovery.dart';
 import '../models/content_catalog.dart';
 import '../services/ai/surprise_selector.dart';
 import '../models/activity.dart';
@@ -22,11 +25,13 @@ class AppController extends ChangeNotifier {
   late final DiscoveryAnalyzer spotAnalyzer;
   final FactMemory factMemory = FactMemory();
   late final SurpriseSelector surpriseSelector;
+  late final OpenDiscoveryService openDiscoveryService;
   late final AiProvider aiProvider;
   bool ready = false;
   String? startupError;
   bool _initInProgress = false;
   bool _disposed = false;
+  Timer? _saveTimer;
 
   ChildProfileState profile = ChildProfileState();
   int stars = 0;
@@ -41,7 +46,9 @@ class AppController extends ChangeNotifier {
   final List<String> completionTokens = <String>[];
 
   /// UI language preference; stored with the same local snapshot as progress.
-  String languageCode = 'en';
+  /// A grown-up can turn this on to let SPOT name and talk about ANY object in
+  /// a photo, not just the game's own catalogue. Off by default.
+  bool openDiscoveryEnabled = false;
 
   /// Recent, local-only events used by the discovery journal and parent report.
   final List<Map<String, dynamic>> activityEvents = <Map<String, dynamic>>[];
@@ -52,7 +59,8 @@ class AppController extends ChangeNotifier {
     if (totalCompletions >= 1 || discoveries.isNotEmpty) {
       unlocked.add('starter_garden');
     }
-    if (discoveries.any((id) => id.toLowerCase().contains('butterfly')) || totalCompletions >= 3) {
+    if (discoveries.any((id) => id.toLowerCase().contains('butterfly')) ||
+        totalCompletions >= 3) {
       unlocked.add('butterfly_meadow');
     }
     if (totalCompletions >= 5 || discoveries.length >= 4) {
@@ -70,6 +78,7 @@ class AppController extends ChangeNotifier {
     // fields. Network requests remain lazy inside each provider call.
     aiProvider = OpenAiCompatibleProvider();
     spotAnalyzer = DiscoveryAnalyzer(provider: aiProvider);
+    openDiscoveryService = OpenDiscoveryService(provider: aiProvider);
     surpriseSelector = SurpriseSelector(provider: aiProvider);
   }
 
@@ -86,7 +95,9 @@ class AppController extends ChangeNotifier {
         stars = _int(snapshot['stars'], 0).clamp(0, 1000000).toInt();
         discoveries
           ..clear()
-          ..addAll(_strings(snapshot['discoveries']).map(_normalizeDiscoveryId));
+          ..addAll(
+            _strings(snapshot['discoveries']).map(_normalizeDiscoveryId),
+          );
         completedActivities
           ..clear()
           ..addAll(_strings(snapshot['completedActivities']));
@@ -99,22 +110,21 @@ class AppController extends ChangeNotifier {
         lastActivity = snapshot['lastActivity'] is String
             ? snapshot['lastActivity'] as String
             : '';
-        progression = _int(snapshot['progression'], 1).clamp(1, 1000000).toInt();
+        progression = _int(
+          snapshot['progression'],
+          1,
+        ).clamp(1, 1000000).toInt();
         totalCompletions = _int(
           snapshot['totalCompletions'],
           completedActivities.length,
         ).clamp(0, 1000000000).toInt();
-        final savedLanguage = snapshot['languageCode'];
-        languageCode = savedLanguage is String && const {'en', 'kn', 'hi'}.contains(savedLanguage)
-            ? savedLanguage
-            : 'en';
+        openDiscoveryEnabled = snapshot['openDiscovery'] == true;
         activityEvents
           ..clear()
           ..addAll(_eventMaps(snapshot['activityEvents']).takeLast(300));
         await history.load(_map(snapshot['history']));
         factMemory.load(_map(snapshot['factMemory']));
       }
-
     } catch (error, stackTrace) {
       startupError = 'Vee could not load saved progress. Please try again.';
       debugPrint('App initialization failed: $error\n$stackTrace');
@@ -136,9 +146,9 @@ class AppController extends ChangeNotifier {
   static Map<String, dynamic> _map(Object? value) {
     if (value is! Map) return <String, dynamic>{};
     return Map<String, dynamic>.fromEntries(
-      value.entries.where((entry) => entry.key is String).map(
-            (entry) => MapEntry(entry.key as String, entry.value),
-          ),
+      value.entries
+          .where((entry) => entry.key is String)
+          .map((entry) => MapEntry(entry.key as String, entry.value)),
     );
   }
 
@@ -147,11 +157,16 @@ class AppController extends ChangeNotifier {
 
   static List<Map<String, dynamic>> _eventMaps(Object? value) {
     if (value is! List) return <Map<String, dynamic>>[];
-    return value.whereType<Map>().map((event) => Map<String, dynamic>.fromEntries(
-      event.entries.where((entry) => entry.key is String).map(
-        (entry) => MapEntry(entry.key as String, entry.value),
-      ),
-    )).toList();
+    return value
+        .whereType<Map>()
+        .map(
+          (event) => Map<String, dynamic>.fromEntries(
+            event.entries
+                .where((entry) => entry.key is String)
+                .map((entry) => MapEntry(entry.key as String, entry.value)),
+          ),
+        )
+        .toList();
   }
 
   void _recordEvent(String type, String label) {
@@ -163,14 +178,15 @@ class AppController extends ChangeNotifier {
     if (activityEvents.length > 300) activityEvents.removeAt(0);
   }
 
-  Future<void> setLanguage(String value) async {
-    if (!const {'en', 'kn', 'hi'}.contains(value) || languageCode == value) return;
-    final previous = languageCode;
-    languageCode = value;
+  /// Turns "Discover anything" in SPOT on or off. Saved straight away.
+  Future<void> setOpenDiscovery(bool value) async {
+    if (openDiscoveryEnabled == value) return;
+    final previous = openDiscoveryEnabled;
+    openDiscoveryEnabled = value;
     try {
       await save();
     } catch (_) {
-      languageCode = previous;
+      openDiscoveryEnabled = previous;
       if (!_disposed) notifyListeners();
       rethrow;
     }
@@ -182,7 +198,9 @@ class AppController extends ChangeNotifier {
     final oldCompleted = List<String>.from(completedActivities);
     final oldSignatures = List<String>.from(experienceSignatures);
     final oldTokens = List<String>.from(completionTokens);
-    final oldEvents = activityEvents.map((e) => Map<String, dynamic>.from(e)).toList();
+    final oldEvents = activityEvents
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
     final oldProgression = progression;
     final oldTotal = totalCompletions;
     final oldLastActivity = lastActivity;
@@ -203,11 +221,21 @@ class AppController extends ChangeNotifier {
       await save();
     } catch (_) {
       stars = oldStars;
-      discoveries..clear()..addAll(oldDiscoveries);
-      completedActivities..clear()..addAll(oldCompleted);
-      experienceSignatures..clear()..addAll(oldSignatures);
-      completionTokens..clear()..addAll(oldTokens);
-      activityEvents..clear()..addAll(oldEvents);
+      discoveries
+        ..clear()
+        ..addAll(oldDiscoveries);
+      completedActivities
+        ..clear()
+        ..addAll(oldCompleted);
+      experienceSignatures
+        ..clear()
+        ..addAll(oldSignatures);
+      completionTokens
+        ..clear()
+        ..addAll(oldTokens);
+      activityEvents
+        ..clear()
+        ..addAll(oldEvents);
       progression = oldProgression;
       totalCompletions = oldTotal;
       lastActivity = oldLastActivity;
@@ -220,24 +248,59 @@ class AppController extends ChangeNotifier {
   static int _int(Object? value, int fallback) =>
       value is num ? value.toInt() : fallback;
 
+  Map<String, dynamic> _snapshot() => <String, dynamic>{
+    'profile': profile.toJson(),
+    'stars': stars,
+    'discoveries': discoveries,
+    'completedActivities': completedActivities,
+    'experienceSignatures': experienceSignatures,
+    'lastActivity': lastActivity,
+    'progression': progression,
+    'totalCompletions': totalCompletions,
+    'completionTokens': completionTokens,
+    'schemaVersion': 3,
+    'openDiscovery': openDiscoveryEnabled,
+    'activityEvents': activityEvents,
+    'history': history.toJson(),
+    'factMemory': factMemory.toJson(),
+  };
+
+  /// Writes the whole snapshot and then tells the UI something changed.
+  /// Use this for changes the player can see (stars, profile, language).
   Future<void> save() async {
-    await storage.writeSnapshot({
-      'profile': profile.toJson(),
-      'stars': stars,
-      'discoveries': discoveries,
-      'completedActivities': completedActivities,
-      'experienceSignatures': experienceSignatures,
-      'lastActivity': lastActivity,
-      'progression': progression,
-      'totalCompletions': totalCompletions,
-      'completionTokens': completionTokens,
-      'schemaVersion': 3,
-      'languageCode': languageCode,
-      'activityEvents': activityEvents,
-      'history': history.toJson(),
-      'factMemory': factMemory.toJson(),
-    });
+    await storage.writeSnapshot(_snapshot());
     if (!_disposed) notifyListeners();
+  }
+
+  /// Saves soon, without waking every widget in the app.
+  ///
+  /// Tapping around a world can add a discovery on nearly every tap. Writing
+  /// and re-notifying on each one made the game stutter, so rapid calls are
+  /// merged into a single quiet write. [finishActivity] and [save] still write
+  /// immediately, and they include anything scheduled here.
+  void scheduleSave({Duration delay = const Duration(milliseconds: 600)}) {
+    if (_disposed) return;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(delay, () {
+      _saveTimer = null;
+      unawaited(_writeQuietly());
+    });
+  }
+
+  /// Writes any scheduled save right now. Safe to call at any time.
+  Future<void> flushPendingSave() async {
+    if (_saveTimer == null) return;
+    _saveTimer?.cancel();
+    _saveTimer = null;
+    await _writeQuietly();
+  }
+
+  Future<void> _writeQuietly() async {
+    try {
+      await storage.writeSnapshot(_snapshot());
+    } catch (error, stackTrace) {
+      debugPrint('Could not save progress: $error\n$stackTrace');
+    }
   }
 
   /// Persists profile changes before notifying the UI. This prevents the root
@@ -274,6 +337,7 @@ class AppController extends ChangeNotifier {
       rethrow;
     }
   }
+
   void addStars(int value) {
     if (value <= 0) return;
     stars = (stars + value).clamp(0, 1000000).toInt();
@@ -301,7 +365,9 @@ class AppController extends ChangeNotifier {
     final oldActivities = List<String>.from(completedActivities);
     final oldTokens = List<String>.from(completionTokens);
     final oldDiscoveries = List<String>.from(discoveries);
-    final oldEvents = activityEvents.map((e) => Map<String, dynamic>.from(e)).toList();
+    final oldEvents = activityEvents
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
 
     completionTokens.add(token);
     if (completionTokens.length > 300) completionTokens.removeAt(0);
@@ -332,13 +398,17 @@ class AppController extends ChangeNotifier {
       discoveries
         ..clear()
         ..addAll(oldDiscoveries);
-      activityEvents..clear()..addAll(oldEvents);
+      activityEvents
+        ..clear()
+        ..addAll(oldEvents);
       rethrow;
     }
   }
+
   String _normalizeDiscoveryId(String raw) {
     final value = raw.trim();
-    final match = RegExp(r'^(spot|explore|play)-(spot|explore|play)-(.+)$').firstMatch(value);
+    final match = RegExp(r'^(spot|explore|play)-(spot|explore|play)-(.+)$')
+        .firstMatch(value);
     if (match != null && match.group(1) == match.group(2)) {
       return '${match.group(1)}-${match.group(3)}';
     }
@@ -350,12 +420,33 @@ class AppController extends ChangeNotifier {
     _addDiscovery(id);
     if (discoveries.length != before) {
       _recordEvent('discovery_found', id);
-      save().catchError((Object error, StackTrace stackTrace) {
-        debugPrint('Could not save discovery event: $error');
-      });
-    } else if (!_disposed) {
-      notifyListeners();
+      scheduleSave();
     }
+  }
+
+  /// Catalog item IDs the child has met so far (for the sticker book).
+  ///
+  /// Items are recorded under several discovery prefixes depending on which
+  /// activity found them, so all of them are recognised here.
+  Set<String> get collectedItemIds {
+    final found = <String>{};
+    for (final raw in discoveries) {
+      final id = _normalizeDiscoveryId(raw);
+      String? key;
+      if (id.startsWith('item-')) {
+        key = id.substring(5);
+      } else if (id.startsWith('discovery-')) {
+        key = id.substring(10);
+      } else if (id.startsWith('play-puzzle-')) {
+        key = id.substring(12);
+      } else if (id.startsWith('wow-')) {
+        final rest = id.substring(4);
+        final dash = rest.indexOf('-');
+        key = dash > 0 ? rest.substring(0, dash) : rest;
+      }
+      if (key != null && ContentCatalog.get(key) != null) found.add(key);
+    }
+    return found;
   }
 
   void _addDiscovery(String id) {
@@ -379,10 +470,12 @@ class AppController extends ChangeNotifier {
       debugPrint('Could not save completed activity: $error');
     });
   }
-  void recordCompletedAdventure(AdventureBlueprint adventure) { history.record(adventure);
-  experienceSignatures.add(adventure.signature());
-  if (experienceSignatures.length > 24) experienceSignatures.removeAt(0);
-    }
+
+  void recordCompletedAdventure(AdventureBlueprint adventure) {
+    history.record(adventure);
+    experienceSignatures.add(adventure.signature());
+    if (experienceSignatures.length > 24) experienceSignatures.removeAt(0);
+  }
 
   ActivityType chooseActivity() {
     final type = selector.select(
@@ -404,14 +497,19 @@ class AppController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    if (_saveTimer != null) {
+      _saveTimer?.cancel();
+      _saveTimer = null;
+      unawaited(_writeQuietly());
+    }
     super.dispose();
   }
 
   int get movementDifficultyLevel => switch (movementProfile) {
-        MovementProfile.gentle => 1,
-        MovementProfile.steady => 2,
-        MovementProfile.energetic => 3,
-      };
+    MovementProfile.gentle => 1,
+    MovementProfile.steady => 2,
+    MovementProfile.energetic => 3,
+  };
 }
 
 class ChildProfileState {
@@ -430,12 +528,12 @@ class ChildProfileState {
   });
 
   Map<String, dynamic> toJson() => {
-        'name': name,
-        'age': age,
-        'movementPreference': movementPreference,
-        'environmentMode': environmentMode.name,
-        'onboardingComplete': onboardingComplete,
-      };
+    'name': name,
+    'age': age,
+    'movementPreference': movementPreference,
+    'environmentMode': environmentMode.name,
+    'onboardingComplete': onboardingComplete,
+  };
 
   factory ChildProfileState.fromJson(Map<String, dynamic> j) =>
       ChildProfileState(
@@ -447,9 +545,11 @@ class ChildProfileState {
             ? j['movementPreference'] as String
             : 'Hop & reach',
         environmentMode: EnvironmentMode.values.firstWhere(
-          (e) => e.name == (j['environmentMode'] is String
-              ? j['environmentMode'] as String
-              : 'outdoor'),
+          (e) =>
+              e.name ==
+              (j['environmentMode'] is String
+                  ? j['environmentMode'] as String
+                  : 'outdoor'),
           orElse: () => EnvironmentMode.outdoor,
         ),
         onboardingComplete: j['onboardingComplete'] is bool
@@ -457,8 +557,6 @@ class ChildProfileState {
             : false,
       );
 }
-
-
 
 extension ListTail<T> on List<T> {
   List<T> takeLast(int count) {

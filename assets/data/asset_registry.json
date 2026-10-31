@@ -1,18 +1,10 @@
 {
   "available": [
     {
-      "id": "background.main",
-      "path": "assets/vee/game_background.webp",
-      "kind": "raster",
-      "dimensions": "1280x719",
-      "alpha": false,
-      "role": "fixed-world-background"
-    },
-    {
       "id": "vee.happy",
       "path": "assets/vee/vee_happy_idle.webp",
       "kind": "raster",
-      "dimensions": "666x800",
+      "dimensions": "890x1000",
       "alpha": true,
       "role": "default-static-vee"
     },
@@ -20,7 +12,7 @@
       "id": "vee.encourage",
       "path": "assets/vee/vee_encourage.webp",
       "kind": "raster",
-      "dimensions": "666x800",
+      "dimensions": "890x1000",
       "alpha": true,
       "role": "encouraging-static-vee"
     },
@@ -28,9 +20,97 @@
       "id": "vee.celebration",
       "path": "assets/vee/vee_celebration.webp",
       "kind": "raster",
-      "dimensions": "666x800",
+      "dimensions": "890x1000",
       "alpha": true,
       "role": "celebration-static-vee"
+    },
+    {
+      "id": "vee.wave",
+      "path": "assets/vee/vee_wave.webp",
+      "kind": "raster",
+      "dimensions": "890x1000",
+      "alpha": true,
+      "role": "greeting"
+    },
+    {
+      "id": "vee.spot",
+      "path": "assets/vee/vee_spot.webp",
+      "kind": "raster",
+      "dimensions": "890x1000",
+      "alpha": true,
+      "role": "spot-magnifier-pose"
+    },
+    {
+      "id": "vee.thinking",
+      "path": "assets/vee/vee_thinking.webp",
+      "kind": "raster",
+      "dimensions": "890x1000",
+      "alpha": true,
+      "role": "puzzles-and-analysing"
+    },
+    {
+      "id": "vee.surprised",
+      "path": "assets/vee/vee_surprised.webp",
+      "kind": "raster",
+      "dimensions": "890x1000",
+      "alpha": true,
+      "role": "surprise-moments"
+    },
+    {
+      "id": "vee.sleepy",
+      "path": "assets/vee/vee_sleepy.webp",
+      "kind": "raster",
+      "dimensions": "890x1000",
+      "alpha": true,
+      "role": "errors-and-retry"
+    },
+    {
+      "id": "scene.meadow",
+      "path": "assets/scenes/bg_meadow.webp",
+      "kind": "raster",
+      "dimensions": "1672x941",
+      "alpha": false,
+      "role": "outdoor-background"
+    },
+    {
+      "id": "scene.indoor",
+      "path": "assets/scenes/bg_indoor.webp",
+      "kind": "raster",
+      "dimensions": "1672x941",
+      "alpha": false,
+      "role": "indoor-background"
+    },
+    {
+      "id": "scene.closeup",
+      "path": "assets/scenes/bg_closeup.webp",
+      "kind": "raster",
+      "dimensions": "1672x941",
+      "alpha": false,
+      "role": "look-closer-background"
+    },
+    {
+      "id": "door.closed",
+      "path": "assets/scenes/door_closed.webp",
+      "kind": "raster",
+      "dimensions": "1100x995",
+      "alpha": true,
+      "role": "grown-up-card-door"
+    },
+    {
+      "id": "door.open",
+      "path": "assets/scenes/door_open.webp",
+      "kind": "raster",
+      "dimensions": "1100x1021",
+      "alpha": true,
+      "role": "ready-screen-door"
+    },
+    {
+      "id": "items.*",
+      "path": "assets/items/<catalog item id>.webp",
+      "kind": "raster",
+      "dimensions": "512x512",
+      "alpha": true,
+      "role": "item-icons (apple, banana, tomato, carrot, flower, tree, leaf, butterfly, bird, rock, water, toothbrush, soap, mirror, book, lamp, balloon, plate, cup, toy)"
     }
   ],
   "missing_from_supplied_zip": [
@@ -46,13 +126,5 @@
     "magical_flower.svg",
     "discovery_collection_badge.svg"
   ],
-  "implementation_policy": "Missing static props are procedurally generated in Flutter/Flame rather than replaced by invented images. The missing curious pose is not invented; the available encouraging pose is used for discovery states.",
-  "intro_cinematic": {
-    "id": "intro.cinematic",
-    "path": "assets/intro/intro_video.mp4",
-    "kind": "video",
-    "dimensions": "848x478",
-    "alpha": false,
-    "role": "launch-cinematic"
-  }
+  "implementation_policy": "Missing static props are procedurally generated in Flutter/Flame rather than replaced by invented images. All pictures are WebP. Backgrounds fall back to scenes drawn in code and item icons fall back to emoji if a file ever fails to load (see lib/services/assets/optional_assets.dart). Retired in v2.0.0 (files removed): background.main, world.wooden_panel, world.door.closed, world.door.open, intro.cinematic."
 }

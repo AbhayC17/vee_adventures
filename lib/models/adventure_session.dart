@@ -30,16 +30,11 @@ class PlayAdventureSession {
 
   /// Advances exactly one stage. Skipping, going backwards, or moving after
   /// completion is rejected. A path must be selected before the first movement.
-  bool advanceTo(
-    PlayStage next, {
-    String? path,
-    String? status,
-  }) {
+  bool advanceTo(PlayStage next, {String? path, String? status}) {
     if (_finished || next.index != _stage.index + 1) return false;
 
     final nextPath = path?.trim();
-    if (_stage == PlayStage.pathChoice &&
-        (nextPath ?? _path).trim().isEmpty) {
+    if (_stage == PlayStage.pathChoice && (nextPath ?? _path).trim().isEmpty) {
       return false;
     }
 

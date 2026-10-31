@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -38,18 +37,17 @@ class OpenAiCompatibleProvider implements AiProvider {
 
   String? lastError;
 
-  OpenAiCompatibleProvider({
-    String? baseUrl,
-    String? apiKey,
-    String? model,
-  })  : baseUrl = baseUrl ??
-            const String.fromEnvironment('AI_BASE_URL', defaultValue: ''),
-        apiKey = apiKey ?? const String.fromEnvironment('AI_API_KEY'),
-        model = model ??
-            const String.fromEnvironment(
-              'AI_MODEL',
-              defaultValue: defaultAiModel,
-            );
+  OpenAiCompatibleProvider({String? baseUrl, String? apiKey, String? model})
+    : baseUrl =
+          baseUrl ??
+          const String.fromEnvironment('AI_BASE_URL', defaultValue: ''),
+      apiKey = apiKey ?? const String.fromEnvironment('AI_API_KEY'),
+      model =
+          model ??
+          const String.fromEnvironment(
+            'AI_MODEL',
+            defaultValue: defaultAiModel,
+          );
 
   String get _effectiveBaseUrl {
     if (baseUrl.trim().isNotEmpty) {
@@ -69,8 +67,8 @@ class OpenAiCompatibleProvider implements AiProvider {
   Uri get _completionUri => Uri.parse(_effectiveBaseUrl);
 
   Map<String, String> get _headers => const {
-        'Content-Type': 'application/json',
-      };
+    'Content-Type': 'application/json',
+  };
 
   Map<String, dynamic>? _decodeJsonObject(http.Response response) {
     lastError = null;
@@ -141,11 +139,7 @@ class OpenAiCompatibleProvider implements AiProvider {
 
   Future<http.Response> _post(Map<String, dynamic> payload) {
     return http
-        .post(
-          _completionUri,
-          headers: _headers,
-          body: jsonEncode(payload),
-        )
+        .post(_completionUri, headers: _headers, body: jsonEncode(payload))
         .timeout(const Duration(seconds: 55));
   }
 
@@ -157,8 +151,7 @@ class OpenAiCompatibleProvider implements AiProvider {
     lastError = null;
 
     if (!configured) {
-      lastError =
-          'AI is not configured. Set AI_BASE_URL to the deployed /api/groq endpoint.';
+      lastError = 'AI is not configured. Set AI_BASE_URL to the deployed /api/groq endpoint.';
       if (kDebugMode) debugPrint(lastError);
       return null;
     }
@@ -222,6 +215,37 @@ class OpenAiCompatibleProvider implements AiProvider {
     return 'image/jpeg';
   }
 
+  /// The address of the server's safety check, next to the main proxy.
+  Uri? get _moderationUri {
+    if (!_isProxyEndpoint) return null;
+    return Uri.parse(
+      _effectiveBaseUrl.replaceFirst(RegExp(r'/groq$'), '/moderate'),
+    );
+  }
+
+  /// Asks the server whether [text] is suitable for children aged 3 to 6.
+  ///
+  /// Returns `true` (safe), `false` (not safe), or `null` when the check could
+  /// not run (offline, not configured, server error). Callers must treat `null`
+  /// as "do not show this text".
+  Future<bool?> moderateText(String text) async {
+    final uri = _moderationUri;
+    if (uri == null || text.trim().isEmpty) return null;
+    try {
+      final response = await http
+          .post(uri, headers: _headers, body: jsonEncode({'text': text}))
+          .timeout(const Duration(seconds: 20));
+      if (response.statusCode != 200) return null;
+      final decoded = jsonDecode(response.body);
+      if (decoded is Map && decoded['safe'] is bool) {
+        return decoded['safe'] as bool;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   Future<Map<String, dynamic>?> generateVisionJson({
     required String prompt,
@@ -257,9 +281,7 @@ class OpenAiCompatibleProvider implements AiProvider {
               {'type': 'text', 'text': prompt},
               {
                 'type': 'image_url',
-                'image_url': {
-                  'url': 'data:$media;base64,$data',
-                },
+                'image_url': {'url': 'data:$media;base64,$data'},
               },
             ],
           },

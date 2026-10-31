@@ -8,25 +8,41 @@ class SurpriseChoice {
   const SurpriseChoice(this.id, this.label);
 }
 
+/// Picks which surprise appears after a child completes a challenge.
+///
+/// This used to ask the AI proxy to choose one ID from a short allow-list.
+/// That cost a full network round trip (2–3 s, up to 55 s on a timeout) for
+/// a decision that is just "pick one of N", and it froze the screen right
+/// after the child's best moment. The choice is now local and instant.
+///
+/// It also avoids repeating the previous surprise, so replays feel fresher.
+///
+/// The [provider] parameter is kept only so existing callers such as
+/// AppController keep compiling unchanged. It is intentionally unused, so
+/// this class makes no network calls.
 class SurpriseSelector {
-  final AiProvider provider;
+  final AiProvider? provider;
   final Random random;
-  SurpriseSelector({AiProvider? provider, Random? random})
-      : provider = provider ?? OpenAiCompatibleProvider(),
-        random = random ?? Random();
+  String? _lastId;
 
-  Future<SurpriseChoice> choose({required List<SurpriseChoice> allowed, String context = ''}) async {
-    if (allowed.isEmpty) return const SurpriseChoice('small_glow', 'A tiny glow appears.');
-    final json = await provider.generateJson(
-      systemPrompt: 'Choose one surprise ID only. Never invent IDs or child-facing facts. Return JSON: {"surprise_id":"..."}.',
-      userPrompt: 'Allowed surprises: ${allowed.map((e) => e.id).join(', ')}. Context: $context',
-    );
-    final id = json?['surprise_id'] as String?;
-    final match = allowed.where((e) => e.id == id).firstOrNull;
-    return match ?? allowed[random.nextInt(allowed.length)];
+  SurpriseSelector({this.provider, Random? random})
+    : random = random ?? Random();
+
+  /// Still async so callers that `await` it need no changes, but it completes
+  /// without waiting on anything.
+  Future<SurpriseChoice> choose({
+    required List<SurpriseChoice> allowed,
+    String context = '',
+  }) async {
+    if (allowed.isEmpty) {
+      return const SurpriseChoice('small_glow', 'A tiny glow appears.');
+    }
+
+    final fresh = allowed.length > 1
+        ? allowed.where((e) => e.id != _lastId).toList(growable: false)
+        : allowed;
+    final pick = fresh[random.nextInt(fresh.length)];
+    _lastId = pick.id;
+    return pick;
   }
-}
-
-extension _FirstOrNull<T> on Iterable<T> {
-  T? get firstOrNull => isEmpty ? null : first;
 }

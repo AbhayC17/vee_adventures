@@ -53,7 +53,10 @@ class _MovementVeeAnimationState extends State<MovementVeeAnimation> {
     _frame = 1;
 
     final config = _config;
-    if (config == null || !config.enabled || config.frameCount <= 0 || config.fps <= 0) {
+    if (config == null ||
+        !config.enabled ||
+        config.frameCount <= 0 ||
+        config.fps <= 0) {
       return;
     }
 

@@ -2,7 +2,7 @@
   "name": "vees-adventures-ai-proxy",
   "private": true,
   "version": "1.0.0",
-  "description": "Vercel serverless proxy for Vee's Adventures Groq text and vision requests",
+  "description": "Vercel serverless proxy for Movement Missions Groq text and vision requests",
   "engines": {
     "node": ">=20"
   },

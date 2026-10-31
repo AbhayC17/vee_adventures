@@ -17,9 +17,11 @@ class GameHistory {
   Future<void> load(Map<String, dynamic> json) async {
     adventures
       ..clear()
-      ..addAll(_list(json['adventures'])
-          .whereType<Map>()
-          .map((m) => AdventureRecord.fromJson(_stringKeyedMap(m))));
+      ..addAll(
+        _list(json['adventures'])
+            .whereType<Map>()
+            .map((m) => AdventureRecord.fromJson(_stringKeyedMap(m))),
+      );
 
     movements
       ..clear()
@@ -42,16 +44,15 @@ class GameHistory {
   }
 
   Map<String, dynamic> toJson() => {
-        'adventures': adventures.map((e) => e.toJson()).toList(),
-        'movements': movements,
-        'stories': stories,
-        'discoveries': discoveries,
-        'surprises': surprises,
-        'taskHistory': {
-          for (final entry in taskHistory.entries)
-            entry.key.name: entry.value,
-        },
-      };
+    'adventures': adventures.map((e) => e.toJson()).toList(),
+    'movements': movements,
+    'stories': stories,
+    'discoveries': discoveries,
+    'surprises': surprises,
+    'taskHistory': {
+      for (final entry in taskHistory.entries) entry.key.name: entry.value,
+    },
+  };
 
   static List<dynamic> _list(Object? value) =>
       value is List ? value : <dynamic>[];
@@ -61,9 +62,9 @@ class GameHistory {
 
   static Map<String, dynamic> _stringKeyedMap(Map value) =>
       Map<String, dynamic>.fromEntries(
-        value.entries.where((entry) => entry.key is String).map(
-              (entry) => MapEntry(entry.key as String, entry.value),
-            ),
+        value.entries
+            .where((entry) => entry.key is String)
+            .map((entry) => MapEntry(entry.key as String, entry.value)),
       );
 
   void record(AdventureBlueprint a) {
@@ -105,14 +106,14 @@ class AdventureRecord {
       AdventureRecord(a.signature(), a.theme, a.movementPattern);
 
   factory AdventureRecord.fromJson(Map<String, dynamic> j) => AdventureRecord(
-        j['signature'] is String ? j['signature'] as String : '',
-        j['theme'] is String ? j['theme'] as String : '',
-        j['movementPattern'] is String ? j['movementPattern'] as String : '',
-      );
+    j['signature'] is String ? j['signature'] as String : '',
+    j['theme'] is String ? j['theme'] as String : '',
+    j['movementPattern'] is String ? j['movementPattern'] as String : '',
+  );
 
   Map<String, dynamic> toJson() => {
-        'signature': signature,
-        'theme': theme,
-        'movementPattern': movementPattern,
-      };
+    'signature': signature,
+    'theme': theme,
+    'movementPattern': movementPattern,
+  };
 }

@@ -22,20 +22,20 @@ class ActivitySelector {
     // the content framing. Both are inputs to the same activity selector.
     final preferred = switch (profile) {
       MovementProfile.energetic => const [
-          ActivityType.play,
-          ActivityType.spot,
-          ActivityType.explore,
-        ],
+        ActivityType.play,
+        ActivityType.spot,
+        ActivityType.explore,
+      ],
       MovementProfile.steady => const [
-          ActivityType.spot,
-          ActivityType.play,
-          ActivityType.explore,
-        ],
+        ActivityType.spot,
+        ActivityType.play,
+        ActivityType.explore,
+      ],
       MovementProfile.gentle => const [
-          ActivityType.explore,
-          ActivityType.spot,
-          ActivityType.play,
-        ],
+        ActivityType.explore,
+        ActivityType.spot,
+        ActivityType.play,
+      ],
     };
 
     // Keep the parameter explicit so future selection rules can use it.

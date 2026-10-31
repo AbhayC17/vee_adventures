@@ -52,7 +52,8 @@ class MovementCatalog {
       id: 'frog_hops',
       emoji: '🐸',
       label: 'Frog Hops',
-      instruction: 'Bend like a frog, make a small hop or step, and land softly.',
+      instruction:
+          'Bend like a frog, make a small hop or step, and land softly.',
       baseCount: 5,
     ),
     MovementDefinition(
@@ -101,7 +102,8 @@ class MovementCatalog {
       id: 'duck_walk',
       emoji: '🦆',
       label: 'Duck Walk',
-      instruction: 'Bend your knees into a small squat and take tiny steps like a duck.',
+      instruction:
+          'Bend your knees into a small squat and take tiny steps like a duck.',
       baseCount: 4,
     ),
     MovementDefinition(
@@ -136,14 +138,16 @@ class MovementCatalog {
       id: 'giant_steps',
       emoji: '👣',
       label: 'Giant Steps',
-      instruction: 'Take big, steady steps across a clear space like a friendly giant.',
+      instruction:
+          'Take big, steady steps across a clear space like a friendly giant.',
       baseCount: 6,
     ),
     MovementDefinition(
       id: 'tiny_steps',
       emoji: '🐜',
       label: 'Tiny Steps',
-      instruction: 'Take lots of very small steps like a tiny ant exploring a path.',
+      instruction:
+          'Take lots of very small steps like a tiny ant exploring a path.',
       baseCount: 8,
     ),
     MovementDefinition(
@@ -261,8 +265,8 @@ class MovementCatalog {
 
   static final Map<String, MovementDefinition> _byId =
       <String, MovementDefinition>{
-    for (final MovementDefinition movement in all) movement.id: movement,
-  };
+        for (final MovementDefinition movement in all) movement.id: movement,
+      };
 
   static MovementDefinition? find(String id) => _byId[id];
 
@@ -287,10 +291,12 @@ class MovementCatalog {
   static List<MovementDefinition> forProfile(MovementProfile profile) {
     final Iterable<MovementDefinition> filtered = switch (profile) {
       MovementProfile.energetic => all,
-      MovementProfile.steady =>
-        all.where((MovementDefinition m) => !_steadyExcludedIds.contains(m.id)),
-      MovementProfile.gentle =>
-        all.where((MovementDefinition m) => _gentleIds.contains(m.id)),
+      MovementProfile.steady => all.where(
+        (MovementDefinition m) => !_steadyExcludedIds.contains(m.id),
+      ),
+      MovementProfile.gentle => all.where(
+        (MovementDefinition m) => _gentleIds.contains(m.id),
+      ),
     };
     return List<MovementDefinition>.unmodifiable(filtered);
   }
@@ -322,20 +328,19 @@ class MovementCatalog {
     int age = 4,
   }) {
     final definition = resolve(id);
-    return MovementStep(
-      definition.id,
-      countFor(definition, profile, age: age),
-    );
+    return MovementStep(definition.id, countFor(definition, profile, age: age));
   }
 
   static bool validate() {
     final ids = all.map((MovementDefinition m) => m.id).toList();
     return ids.length == ids.toSet().length &&
-        all.every((MovementDefinition m) =>
-            m.id.isNotEmpty &&
-            m.label.trim().isNotEmpty &&
-            m.instruction.trim().isNotEmpty &&
-            m.baseCount >= 1);
+        all.every(
+          (MovementDefinition m) =>
+              m.id.isNotEmpty &&
+              m.label.trim().isNotEmpty &&
+              m.instruction.trim().isNotEmpty &&
+              m.baseCount >= 1,
+        );
   }
 }
 
@@ -364,9 +369,8 @@ class MovementBag {
     if (_profile != profile || _age != safeAge || _cursor >= _bag.length) {
       _profile = profile;
       _age = safeAge;
-      _bag = List<MovementDefinition>.from(
-        MovementCatalog.forProfile(profile),
-      )..shuffle(_random);
+      _bag = List<MovementDefinition>.from(MovementCatalog.forProfile(profile))
+        ..shuffle(_random);
       _cursor = 0;
     }
 

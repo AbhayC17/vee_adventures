@@ -1,7 +1,7 @@
 name: vees_adventures
 description: A warm, responsive Flutter + Flame preschool adventure experience.
 publish_to: "none"
-version: 0.1.0+1
+version: 2.1.0+3
 
 environment:
   sdk: ">=3.13.0 <4.0.0"
@@ -11,7 +11,6 @@ dependencies:
     sdk: flutter
   flame: ^1.38.2
   flutter_svg: ^2.3.0
-  video_player: ^2.14.0
   image_picker: ^1.2.3
   shared_preferences: ^2.5.5
   http: ^1.6.0
@@ -27,11 +26,8 @@ flutter:
   assets:
     - assets/vee/
     - assets/vee/movements/
-    - assets/intro/
-    - assets/world/
-    - assets/world/magical_door_closed.png
-    - assets/world/magical_door_open.png
-    - assets/ui/
+    - assets/scenes/
+    - assets/items/
     - assets/data/
 
   fonts:

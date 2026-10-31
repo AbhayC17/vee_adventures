@@ -1,6 +1,6 @@
-# Vee's Adventures
+# Movement Missions
 
-**Vee's Adventures** is a preschool adventure game built with Flutter and Flame. Children explore familiar environments, solve discovery missions, follow short stories, and complete simple movement challenges with Vee, a friendly tiger companion.
+**Movement Missions** (starring Vee the tiger) is a preschool adventure game built with Flutter and Flame. Children explore familiar environments, solve discovery missions, follow short stories, and complete simple movement challenges with Vee, a friendly tiger companion.
 
 This README is the consolidated project handover document. Earlier standalone Markdown notes have been removed so the repository has one main source of project documentation.
 
@@ -11,20 +11,25 @@ This README is the consolidated project handover document. Earlier standalone Ma
 - **SPOT** — a real-world discovery activity. Children can choose or capture a picture, identify an item from the curated content catalogue, and unlock a child-friendly discovery.
 - **EXPLORE** — interactive indoor and outdoor worlds with discoverable objects, small challenges, surprise events, and hidden areas.
 - **PLAY** — short adventure episodes combining a story, choices, movement challenges, puzzles, discoveries, and a finale.
+- **Storybook look** — one visual language everywhere: cream pages, illustrated scenes (indoor and outdoor), deep-teal pill buttons, a top bar with step dots, and big friendly headlines. Backgrounds are drawn in code until generated artwork is added (see `docs/ASSET_PROMPTS.md`).
+- **EXPLORE is a hide-and-seek game** — peek behind animated hiding spots for items (with a fun fact and a sticker), friendly critters and rare golden finds. A sparkle meter brings surprises, rounds keep finding new things, worlds can be mastered, and every round favours stickers the child does not have yet.
+- **Discover anything (optional, off by default)** — a grown-up can let SPOT name and talk about almost any object in a photo. Pictures of people are refused, text is filtered on the device and checked again on the server, and the photo is never stored. See `api/moderate.ts` and `lib/services/spot/`.
+- **Vee's Meadow** — a free-play Flame world where every tap answers back: fireflies pop into collectable stars, butterflies swirl, the tree rustles and flowers bloom. It grows as the child plays (a treasure chest, then a magic portal appear).
+- **Sticker book** — every discovery in the game as a sticker to collect, with mystery stickers for the ones not yet found.
 - **Companion and family views** — Vee's adventure world, the discovery journal, saved progress, and a parent-gated activity report.
 - **Progression** — stars, discoveries, activity history, environment preference, and child profile information are saved locally on the device/browser.
 
-The app also includes onboarding, an intro video, adaptive layouts, readable text/color treatments, rewards, movement instructions, and a shared design system.
+The app also includes onboarding, adaptive layouts, readable text/color treatments, rewards, movement instructions, and a shared design system.
 
 ## 2. Technology stack
 
 | Area | Technology | Purpose |
 |---|---|---|
 | App UI | Flutter / Dart | Screens, navigation, responsive layouts, and state-driven UI |
-| Interactive game elements | Flame | Lightweight canvas-based game visuals and tap interaction |
+| Interactive game elements | Flame | Vee's Meadow and the reward celebration (canvas-drawn, tap-reactive) in `lib/game/` |
 | AI requests | Vercel serverless functions + Groq API | Server-side text and image requests for supported AI features |
 | Local persistence | `shared_preferences` | Saves the profile, stars, discoveries, and activity progress locally |
-| Media and networking | `video_player`, `image_picker`, `http`, `flutter_svg` | Intro playback, picture selection, HTTP requests, and SVG support |
+| Media and networking | `image_picker`, `http`, `flutter_svg` | Picture selection, HTTP requests, and SVG support |
 | Content | Dart catalogues and JSON assets | Curated facts, movement definitions, episode data, and asset references |
 | Automated checks | Flutter test/analyzer + GitHub Actions | Static analysis, regression tests, contrast checks, and web builds |
 
@@ -38,12 +43,12 @@ The app's AI endpoint is OpenAI-compatible and configured in `api/groq.ts`. The 
 ├── assets/
 │   ├── data/                     # JSON catalogues and episode data
 │   ├── fonts/                    # Fredoka font family
-│   ├── intro/                    # Intro video
-│   ├── vee/                      # Character artwork and movement assets
-│   └── world/                    # World/background illustrations
+│   ├── items/                    # 20 item icons (apple, banana, ... toy)
+│   ├── scenes/                   # Backgrounds (meadow, indoor, close-up) and the two doors
+│   └── vee/                      # Vee's eight poses and the movement-frame slot
 ├── lib/
 │   ├── app/                      # App setup, controller, routing, theme, design tokens
-│   ├── features/                 # Intro, onboarding, hub, SPOT, EXPLORE, PLAY, rewards, companion
+│   ├── features/                 # Onboarding, hub, SPOT, EXPLORE, PLAY, rewards, companion
 │   ├── game/                     # Flame game rendering and interaction
 │   ├── models/                   # Typed models and curated content catalogues
 │   ├── services/                 # AI, discovery, activity selection, storage, movement, safety
@@ -71,7 +76,14 @@ The app's AI endpoint is OpenAI-compatible and configured in `api/groq.ts`. The 
 - `lib/services/discovery_engine.dart` — discovery packs and surprise events used by the activities.
 - `lib/services/movement/movement_catalog.dart` — movement definitions, age-appropriate instructions, and movement selection pools. Keep existing movement IDs stable because other content can refer to them.
 - `lib/services/play/play_episode_catalog.dart` and `assets/data/play_episodes.json` — PLAY episode data and catalogue validation.
-- `lib/services/storage/game_storage.dart` — persistence and saved-state handling.
+- `lib/services/storage/game_storage.dart` — persistence and saved-state handling. `AppController.scheduleSave()` merges rapid saves into one quiet write; `save()` and `finishActivity()` still write immediately.
+- `lib/services/play/play_puzzles.dart` — builds the puzzles (drag-match, odd-one-out, pattern, clue guess). The correct answer is always among the options; unit tests enforce it for every episode.
+- `lib/widgets/puzzle_card.dart` — shows any puzzle, with a gentle shake on a wrong answer and a pop on a right one. Drag puzzles also accept a tap.
+- `lib/widgets/scene_scaffold.dart`, `scene_background.dart`, `scene_ui.dart`, `world_shell.dart` — the shared screen frame (scene, top bar, step pill, tags, round buttons). `lib/app/brand.dart` holds the game's name.
+- `lib/widgets/juicy_tap.dart`, `lib/widgets/vee_avatar.dart` — tap feedback (squish on touch-down) and Vee's reactive poses.
+- `lib/widgets/sticker_book.dart` — the collection screen.
+- `lib/game/world_adventure_game.dart`, `lib/game/living_world.dart` — the Flame meadow and the widget that hosts it. This is the only place Flame is used.
+- `lib/features/meadow/meadow_screen.dart` — Vee's Meadow.
 - `lib/services/ai/ai_provider.dart` — client-side request and response handling for the `/api/groq` endpoint.
 - `api/groq.ts` — validates requests/images, reads `GROQ_API_KEY`, forwards requests to the AI provider, and returns structured errors.
 - `api/health.ts` — simple endpoint for checking whether the proxy is running and whether its environment key is configured.
@@ -85,7 +97,7 @@ The app's AI endpoint is OpenAI-compatible and configured in `api/groq.ts`. The 
 5. The activities use the curated catalogue/discovery engine and the shared controller to record completions, stars, discoveries, and history.
 6. State is persisted locally so it can be restored on the same browser/device. The current implementation does **not** synchronise progress between devices.
 
-The catalogues are the source of approved educational facts and discovery content. AI is used for supported identification/selection/story features; it should not replace the content catalogue or produce unsafe instructions for children.
+The catalogues are the source of approved educational facts and discovery content. AI is used only for SPOT photo identification and the optional parent-area story; it should not replace the content catalogue or produce unsafe instructions for children. Surprises, puzzles and PLAY stories are chosen locally and instantly, with no network request (an earlier version asked the AI to pick a surprise, which froze the screen for several seconds).
 
 ## 5. Requirements
 
@@ -93,7 +105,7 @@ The catalogues are the source of approved educational facts and discovery conten
 - Dart **3.13 or newer**, within the SDK range in `pubspec.yaml`.
 - Node.js **20 or newer** and npm, for the Vercel functions.
 - A Vercel account/project for hosted AI requests.
-- A Groq API key for AI features. Create/manage it through the Groq console, then store it in Vercel environment settings.
+- A Groq API key for AI features. Create/manage it through the Groq console, then store it in Vercel environment settings. `.env.example` lists the variable names. The proxy only accepts requests from your own site (add others with `ALLOWED_ORIGINS`) and rate-limits each visitor.
 - Chrome or another supported browser for web testing.
 
 ## 6. Get started locally
@@ -186,8 +198,10 @@ These scripts recreate Android/iOS/web platform scaffolding, apply platform conf
 Build the Flutter web application:
 
 ```bash
-flutter build web --release
+flutter build web --release --no-web-resources-cdn
 ```
+
+`--no-web-resources-cdn` bundles CanvasKit with the app instead of downloading it from a Google server, which keeps the game free of third-party requests. After building, open the game with the browser's Network tab visible and confirm every request goes to your own domain.
 
 Then deploy from the linked project root:
 
@@ -241,3 +255,15 @@ Common results:
 - **HTTP 404** — check that `vercel dev` is running from this project root and that Vercel is linked to the intended project.
 - **AI unavailable in `flutter run -d chrome`** — use `vercel dev` for web testing so the serverless route is available.
 - **Assets or episodes fail to load** — run `flutter pub get`, confirm asset paths in `pubspec.yaml`, and ensure the corresponding assets/JSON files are present.
+
+## 11. Before publishing (child-safety checklist)
+
+Step-by-step release instructions are in `docs/PUBLISHING.md`; the artwork to create (with AI prompts) is in `docs/ASSET_PROMPTS.md`.
+
+
+- **Photos in SPOT.** A child's photo is sent to the Groq AI through `/api/groq` to identify one object. If you publish in a kids' category (Apple Kids, Google Play Families) or to children under 13, check COPPA/GDPR-K rules with a lawyer and say so in your privacy policy, or switch SPOT to picture-pick only (the "Pick from pictures" button already works with no photo and no network).
+- **No ads, external links or analytics** are included. Keep it that way: do not add packages that collect data.
+- **Third-party requests.** Build with `--no-web-resources-cdn` and check the Network tab. Emoji and some text may still load a fallback font on web; if you see a request to another domain, bundle a font for it.
+- **Parent gate.** The sum changes on every visit. For app-store review, test it with a real 5-year-old.
+- **Rate limiting.** The proxy limit is per serverless instance. Add a shared store (for example Vercel KV) for a hard limit.
+- **Accessibility.** Text stays large and high-contrast (see `test/theme/contrast_accessibility_test.dart`). The game respects the system "reduce motion" setting for tap squish and Vee's hop.

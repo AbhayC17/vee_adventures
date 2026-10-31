@@ -8,8 +8,7 @@ import '../app/design_tokens.dart';
 class LandscapePauseRegistry {
   LandscapePauseRegistry._();
 
-  static final Map<String, _PauseEntry> _entries =
-      <String, _PauseEntry>{};
+  static final Map<String, _PauseEntry> _entries = <String, _PauseEntry>{};
 
   static bool isPortrait = false;
 
@@ -18,10 +17,7 @@ class LandscapePauseRegistry {
     required VoidCallback onPause,
     required VoidCallback onResume,
   }) {
-    _entries[id] = _PauseEntry(
-      onPause: onPause,
-      onResume: onResume,
-    );
+    _entries[id] = _PauseEntry(onPause: onPause, onResume: onResume);
 
     // A widget may register after portrait mode is already active.
     if (isPortrait) {
@@ -38,9 +34,7 @@ class LandscapePauseRegistry {
 
     isPortrait = value;
 
-    final entries = List<_PauseEntry>.from(
-      _entries.values,
-    );
+    final entries = List<_PauseEntry>.from(_entries.values);
 
     for (final entry in entries) {
       if (value) {
@@ -56,10 +50,7 @@ class _PauseEntry {
   final VoidCallback onPause;
   final VoidCallback onResume;
 
-  const _PauseEntry({
-    required this.onPause,
-    required this.onResume,
-  });
+  const _PauseEntry({required this.onPause, required this.onResume});
 }
 
 /// Android-only orientation gate.
@@ -77,18 +68,14 @@ class _PauseEntry {
 class LandscapeOrientationGate extends StatefulWidget {
   final Widget child;
 
-  const LandscapeOrientationGate({
-    super.key,
-    required this.child,
-  });
+  const LandscapeOrientationGate({super.key, required this.child});
 
   @override
   State<LandscapeOrientationGate> createState() =>
       _LandscapeOrientationGateState();
 }
 
-class _LandscapeOrientationGateState
-    extends State<LandscapeOrientationGate> {
+class _LandscapeOrientationGateState extends State<LandscapeOrientationGate> {
   bool _isPortrait = false;
 
   bool _shouldBlock(Size size) {
@@ -108,9 +95,7 @@ class _LandscapeOrientationGateState
 
     _isPortrait = portrait;
 
-    LandscapePauseRegistry.setPortrait(
-      portrait,
-    );
+    LandscapePauseRegistry.setPortrait(portrait);
   }
 
   void _scheduleOrientationSync() {
@@ -121,9 +106,7 @@ class _LandscapeOrientationGateState
       // previous build. This prevents race conditions when the phone is
       // halfway through an Android orientation transition.
       final currentSize = MediaQuery.sizeOf(context);
-      final currentPortrait = _shouldBlock(
-        currentSize,
-      );
+      final currentPortrait = _shouldBlock(currentSize);
 
       _syncOrientation(currentPortrait);
     });
@@ -143,10 +126,7 @@ class _LandscapeOrientationGateState
       enabled: !portrait,
       child: Stack(
         fit: StackFit.expand,
-        children: [
-          widget.child,
-          if (portrait) const _PortraitPrompt(),
-        ],
+        children: [widget.child, if (portrait) const _PortraitPrompt()],
       ),
     );
   }
@@ -162,20 +142,11 @@ class _PortraitPrompt extends StatelessWidget {
       child: SafeArea(
         child: Center(
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 28,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 28),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: 460,
-              ),
+              constraints: const BoxConstraints(maxWidth: 460),
               child: Container(
-                padding: const EdgeInsets.fromLTRB(
-                  30,
-                  32,
-                  30,
-                  30,
-                ),
+                padding: const EdgeInsets.fromLTRB(30, 32, 30, 30),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(32),

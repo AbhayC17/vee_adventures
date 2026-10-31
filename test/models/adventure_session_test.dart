@@ -28,10 +28,7 @@ void main() {
       final session = PlayAdventureSession();
       expect(session.advanceTo(PlayStage.pathChoice), isTrue);
       expect(
-        session.advanceTo(
-          PlayStage.firstMovement,
-          path: 'Secret Tree',
-        ),
+        session.advanceTo(PlayStage.firstMovement, path: 'Secret Tree'),
         isTrue,
       );
 

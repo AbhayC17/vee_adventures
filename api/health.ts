@@ -13,5 +13,7 @@ export default function handler(
     provider: 'Groq',
     model: 'qwen/qwen3.8-27b',
     groqKeyConfigured: Boolean(process.env.GROQ_API_KEY?.trim()),
+    // Which model checks AI-written text before a child sees it.
+    moderationModel: process.env.GROQ_GUARD_MODEL?.trim() || 'qwen/qwen3.8-27b',
   });
 }
